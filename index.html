@@ -797,11 +797,11 @@ $("hDelete").onclick = () => { delete health[ymd(selected)]; save(K.hl, health);
 function parseHealth(text){
   let n = 0;
   String(text).split(/\r?\n/).forEach(line => {
-    const p = line.trim().replace(/\s+/g,"").split(";"); if (p[0] !== "KALH" || !/^\d{4}-\d{2}-\d{2}$/.test(p[1]||"")) return;
+    let p = line.trim().replace(/\s+/g,"").split(";"); if (p[0] !== "KALH") p = ["KALH", ...p]; if (!/^\d{4}-\d{2}-\d{2}$/.test(p[1]||"")) return;
     const old = health[p[1]] || {}, r = Object.assign({}, old);
     const st = num(p[2]), hr = dec(p[3]), sl = dec(p[4]), q = num(p[5]);
-    if (st != null) r.steps = Math.round(st); if (hr != null) r.hr = Math.round(hr);
-    if (sl != null) r.sleep = sl > 1440 ? Math.round(sl/360)/10 : sl > 24 ? Math.round(sl/6)/10 : Math.round(sl*10)/10; // Sekunden/Minuten → Stunden
+    if (st != null && st > 0) r.steps = Math.round(st); if (hr != null && hr > 0) r.hr = Math.round(hr);
+    if (sl != null && sl > 0) r.sleep = sl > 1440 ? Math.round(sl/360)/10 : sl > 24 ? Math.round(sl/6)/10 : Math.round(sl*10)/10; // Sekunden/Minuten → Stunden
     if (q >= 1 && q <= 5) r.q = q;
     health[p[1]] = r; n++;
   });
