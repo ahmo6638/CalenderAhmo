@@ -1,22 +1,23 @@
-// Offline-Cache: App funktioniert auch ohne Internet
-const CACHE = "kalender-v13";
+// Offline-Cache: App funktioniert auch ohne Internet.
+// Netzwerk zuerst und am Browser-Cache vorbei, damit Updates sofort ankommen.
+const CACHE = "kalender-v14";
 const FILES = ["./", "index.html", "manifest.json", "icon-180.png", "icon-512.png"];
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES.map(f => new Request(f, {cache: "reload"})))).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
-// Netzwerk zuerst (damit Updates ankommen), sonst Cache
 self.addEventListener("fetch", e => {
-  if (e.request.method !== "GET") return;
+  const req = e.request;
+  if (req.method !== "GET" || new URL(req.url).origin !== location.origin) return;
   e.respondWith(
-    fetch(e.request).then(r => {
+    fetch(req, {cache: "no-store"}).then(r => {
       const copy = r.clone();
-      caches.open(CACHE).then(c => c.put(e.request, copy));
+      caches.open(CACHE).then(c => c.put(req, copy));
       return r;
-    }).catch(() => caches.match(e.request).then(r => r || caches.match("index.html")))
+    }).catch(() => caches.match(req).then(r => r || caches.match("index.html")))
   );
 });

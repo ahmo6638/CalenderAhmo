@@ -492,6 +492,10 @@ body.list-open #fab{opacity:0;pointer-events:none}
     <button class="menu-btn" id="mExportJson">💾 Backup sichern (.json)</button>
     <button class="menu-btn" id="mExportIcs">📅 Als .ics exportieren (Apple Kalender)</button>
   </div>
+  <div class="field">
+    <button class="menu-btn add-btn" id="mUpdate">⟳ App aktualisieren</button>
+  </div>
+  <p class="hint" id="verInfo"></p>
   <p class="hint">Alles liegt nur auf diesem iPhone. Sichere regelmäßig ein Backup in der Dateien-App – wenn Safari-Websitedaten gelöscht werden, sind die Daten sonst weg. Ein erneuter Import derselben Datei aktualisiert vorhandene Termine (z. B. neue Ergebnisse oder Anstoßzeiten).</p>
   <input type="file" id="importFile" accept=".json,application/json" hidden>
 </div>
@@ -1043,6 +1047,8 @@ $("btnMenu").onclick = () => { renderMenu(); show($("menuSheet")); };
 function fillSync(){ $("sUrl").value = sync.url||""; $("sKey").value = sync.key||""; $("sSecret").value = sync.secret||"";
   $("sInfo").textContent = sync.last ? `Zuletzt synchronisiert: ${new Date(sync.last).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"})}` : "Holt Schritte, Puls und Schlaf automatisch ab, sobald du die App öffnest."; }
 $("btnMenu").addEventListener("click", fillSync);
+$("btnMenu").addEventListener("click", () => { $("verInfo").textContent = "Version " + APP_VERSION + " – deine Termine bleiben beim Aktualisieren erhalten."; });
+$("mUpdate").onclick = () => forceUpdate();
 $("sTest").onclick = async () => {
   sync.url = $("sUrl").value.trim().replace(/\/+$/,""); sync.key = $("sKey").value.trim(); sync.secret = $("sSecret").value.trim();
   save(K.sync, sync); const r = await pullHealth(true); fillSync();
@@ -1262,7 +1268,23 @@ let tt;
 function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), 2000); }
 
 document.addEventListener("visibilitychange", () => { if (document.hidden) return; if (!sameDay(today, new Date())){ today = new Date(); render(); } autoSync(); });
-if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+const APP_VERSION = "1.14 · 24.11.2026";
+if ("serviceWorker" in navigator && location.protocol === "https:"){
+  navigator.serviceWorker.register("sw.js", {updateViaCache: "none"}).then(reg => {
+    reg.update();
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) reg.update(); });
+  }).catch(() => {});
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (!reloaded){ reloaded = true; location.reload(); } });
+}
+async function forceUpdate(){
+  toast("Lade neueste Version …");
+  try{
+    if ("serviceWorker" in navigator){ const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r => r.unregister())); }
+    if (window.caches){ const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); }
+  }catch(e){}
+  location.replace(location.pathname + "?v=" + Date.now());
+}
 render();
 autoSync();
 })();
