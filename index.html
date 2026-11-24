@@ -394,6 +394,24 @@ body.rail-inset .rg button{width:40px;height:40px}
 body.rail-inset #fab{right:calc(var(--sir) + 14px)}
 body.rail-inset #list{right:var(--sir)}
 body.rail-inset #paintbar{right:var(--sir)}
+
+/* ===== Zugeklappt hochkant: Leiste unten schwebend, Kalender volle Breite ===== */
+@media (max-width:559px){
+  :root{--rail:0px}
+  body{padding-right:env(safe-area-inset-right) !important}
+  #rail{left:50%;right:auto !important;top:auto !important;bottom:calc(10px + var(--safe-bot));transform:translateX(-50%);
+    width:auto !important;flex-direction:row;justify-content:center;gap:6px;transition:opacity .2s,transform .25s}
+  .rg{flex-direction:row;border-radius:24px;padding:4px;gap:2px;background:color-mix(in srgb, var(--railbg) 88%, transparent);
+    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 4px 18px rgba(0,0,0,.28) !important}
+  .rg button{width:38px !important;height:38px !important}
+  .mscroll{padding-bottom:90px}
+  #fab{right:16px !important;bottom:calc(66px + var(--safe-bot));width:52px;height:52px}
+  #list{right:0 !important}
+  body.list-open #rail,body.painting #rail{opacity:0;pointer-events:none;transform:translate(-50%,20px)}
+  #paintbar{right:0 !important}
+  .agenda{padding-bottom:calc(120px + var(--safe-bot))}
+  .week{padding-bottom:90px}
+}
 </style>
 </head>
 <body class="v-month">
@@ -1278,7 +1296,7 @@ let tt;
 function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), 2000); }
 
 document.addEventListener("visibilitychange", () => { if (document.hidden) return; if (!sameDay(today, new Date())){ today = new Date(); render(); } autoSync(); });
-const APP_VERSION = "1.15 · 24.11.2026";
+const APP_VERSION = "1.16 · 24.11.2026";
 if ("serviceWorker" in navigator && location.protocol === "https:"){
   navigator.serviceWorker.register("sw.js", {updateViaCache: "none"}).then(reg => {
     reg.update();
