@@ -353,6 +353,37 @@ body.v-month .weekdays{flex:none;border-bottom:1px solid var(--line)}
 .glyphs button{width:38px;height:38px;border-radius:50%;background:var(--muted);display:grid;place-items:center;border:2px solid transparent}
 .glyphs button.on{border-color:var(--text);background:var(--accent)}
 .glyphs .gl{width:22px;height:22px}
+
+/* ===== Tagesfenster als Schublade (hochkant) ===== */
+#list{position:fixed;left:0;right:calc(var(--rail) + env(safe-area-inset-right));bottom:0;z-index:6;margin:0 !important;
+  height:auto !important;max-height:48vh;max-height:48dvh;border-radius:22px 22px 0 0 !important;
+  box-shadow:0 -8px 30px rgba(0,0,0,.35) !important;transform:translateY(110%);transition:transform .32s cubic-bezier(.2,.85,.25,1);
+  display:block !important;padding-top:6px}
+body.list-open #list{transform:none}
+body.v-agenda #list{display:none !important}
+.lgrab{width:42px;height:5px;border-radius:3px;background:var(--line);margin:2px auto 8px}
+.lclose{position:absolute;right:12px;top:10px;width:32px;height:32px;border-radius:50%;background:var(--bg);color:var(--muted);font-size:15px;font-weight:700}
+body.v-month #list{flex:none}
+body.list-open .mscroll{padding-bottom:50vh}
+.ladd{position:absolute;right:52px;top:10px;width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;font-size:22px;font-weight:600;line-height:1}
+body.list-open #fab{opacity:0;pointer-events:none}
+#fab{transition:opacity .2s}
+#list h2{padding-right:88px}
+/* Aufgeklappt quer & zugeklappt quer: Tagesansicht bleibt als feste Spalte */
+@media (min-width:760px) and (min-aspect-ratio:5/4){
+  #list{position:static;transform:none;max-height:none;border-radius:20px !important;box-shadow:0 0 0 1px var(--line) !important;margin:12px 14px calc(12px + var(--safe-bot)) 0 !important}
+  .lgrab,.lclose,.ladd{display:none}
+  body.list-open .mscroll{padding-bottom:20px}
+  body.list-open #fab{opacity:1;pointer-events:auto}
+  #list h2{padding-right:0}
+}
+@media (min-width:560px) and (max-height:520px){
+  #list{position:static;transform:none;max-height:none;border-radius:18px !important;box-shadow:none !important;margin:8px 10px 8px 0 !important}
+  .lgrab,.lclose,.ladd{display:none}
+  body.list-open .mscroll{padding-bottom:20px}
+  body.list-open #fab{opacity:1;pointer-events:auto}
+  #list h2{padding-right:0}
+}
 </style>
 </head>
 <body class="v-month">
@@ -694,10 +725,31 @@ function render(){
 }
 function onDayTap(d){
   if (painting){ paintDay(d); return; }
+  if (sameDay(d, selected) && document.body.classList.contains("list-open")){ closeDay(); return; }
   selected = d;
-  if (view === "month"){ markSel(); renderList(); return; }
-  render();
+  if (view === "month"){ markSel(); renderList(); }
+  else render();
+  openDay();
 }
+function openDay(){
+  document.body.classList.add("list-open");
+  const sc = $("mscroll"), b = sc && sc.querySelector(`.day[data-d="${ymd(selected)}"]`);
+  if (b && sc && drawerMode()){ // Tag sichtbar halten, falls er hinter dem Fenster verschwindet
+    setTimeout(() => { const r = b.getBoundingClientRect(), lr = $("list").getBoundingClientRect();
+      if (r.bottom > lr.top - 8) sc.scrollBy({top: r.bottom - lr.top + 16, behavior: "smooth"}); }, 260);
+  }
+}
+function closeDay(){ document.body.classList.remove("list-open"); }
+const drawerMode = () => getComputedStyle($("list")).position === "fixed";
+(() => { // nach unten wischen schließt
+  let y0 = null; const L = $("list");
+  L.addEventListener("touchstart", e => { y0 = (L.scrollTop <= 0) ? e.touches[0].clientY : null; }, {passive:true});
+  L.addEventListener("touchmove", e => { if (y0 === null || !drawerMode()) return; const dy = e.touches[0].clientY - y0;
+    if (dy > 0) L.style.transform = `translateY(${dy}px)`; }, {passive:true});
+  L.addEventListener("touchend", e => { if (y0 === null) return; const dy = e.changedTouches[0].clientY - y0; L.style.transform = "";
+    if (dy > 80 && drawerMode()) closeDay(); y0 = null; });
+})();
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !openSheet) closeDay(); });
 // ---------- Monat: durchgehend scrollbar ----------
 const addMonths = (d, n) => new Date(d.getFullYear(), d.getMonth() + n, 1);
 const mKey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}`;
@@ -824,7 +876,7 @@ function renderAgenda(){
 function renderList(){
   const d = selected, evs = eventsOn(d), hol = holidayOf(d), t = shiftOn(d), rel = dayDiff(today,d);
   const relTxt = rel===0?"Heute":rel===1?"Morgen":rel===-1?"Gestern":WD[d.getDay()];
-  let html = `<h2>${relTxt}, ${d.getDate()}. ${MONTHS[d.getMonth()]} ${d.getFullYear()!==today.getFullYear()?d.getFullYear():""}</h2>
+  let html = `<div class="lgrab" id="lgrab"></div><button class="ladd" id="ladd" aria-label="Neuer Termin">+</button><button class="lclose" id="lclose" aria-label="Schließen">✕</button><h2>${relTxt}, ${d.getDate()}. ${MONTHS[d.getMonth()]} ${d.getFullYear()!==today.getFullYear()?d.getFullYear():""}</h2>
     <div class="sub">${evs.length ? evs.length + (evs.length===1?" Termin":" Termine") : "Keine Termine"}</div>`;
   html += shiftRow(t);
   if (opts.health && rel <= 0){
@@ -837,6 +889,8 @@ function renderList(){
   if (!evs.length && !hol && !t) html += `<div class="empty">Frei! Tippe auf + für einen Termin.</div>`;
   $("list").innerHTML = html;
   if ($("hCard")) $("hCard").onclick = openHealth;
+  $("lclose").onclick = closeDay;
+  $("ladd").onclick = () => openEditor(null);
   bindEvClicks($("list"));
 }
 function bindEvClicks(root){ root.querySelectorAll(".ev[data-id]").forEach(el => el.onclick = () => openEditor(events.find(x => x.id === el.dataset.id))); }
