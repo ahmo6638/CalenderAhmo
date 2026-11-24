@@ -317,6 +317,8 @@ header{padding-top:14px;padding-bottom:8px}
 @media (min-width:560px){ :root{--rail:66px} #rail{width:54px;right:calc(8px + env(safe-area-inset-right))} .rg{border-radius:27px} .rg button{width:46px;height:46px} }
 @media (max-height:520px){ #rail{top:calc(var(--safe-top) + 6px);bottom:calc(6px + var(--safe-bot))} .rg{gap:0;padding:2px} .rg button{width:38px;height:38px} }
 @media (min-width:560px) and (min-height:521px){ #paintbar{transform:translateX(calc(-50% - var(--rail)/2))} }
+.bub.img{background-color:#fff;background-size:cover;background-position:center;color:transparent;font-size:0}
+.mini{display:inline-block;width:16px;height:16px;border-radius:50%;background:#fff center/cover;vertical-align:-3px}
 </style>
 </head>
 <body class="v-month">
@@ -436,6 +438,9 @@ header{padding-top:14px;padding-bottom:8px}
   <div class="field">
     <div class="row"><label>Name</label><input type="text" id="cName" maxlength="24" placeholder="z. B. Familie"></div>
     <div class="row"><label>Symbol</label><input type="text" id="cIcon" maxlength="4" placeholder="🙂 oder GS"></div>
+    <div class="row"><label>Bild als Symbol</label><span style="display:flex;align-items:center;gap:10px"><i class="bub big" id="cImgPrev" style="display:none"></i>
+      <button class="tb-btn" id="cImgPick">Wählen</button><button class="tb-btn" id="cImgDel" style="display:none">✕</button></span>
+      <input type="file" id="cImgFile" accept="image/*" hidden></div>
     <div class="row"><label>Als Symbol im Monat</label><label class="switch"><input type="checkbox" id="cBubble"><span></span></label></div>
   </div>
   <div class="field"><div class="colors" id="cColors"></div></div>
@@ -591,11 +596,13 @@ function eventsOn(d){
 const shiftOn = d => tplOf(shifts[ymd(d)]);
 const shBadge = t => t ? `<span class="sh" style="background:${t.color}"><span class="si">${esc(t.icon||"")}</span>${esc(t.short)}</span>` : "";
 const isTxt = i => /^[A-Za-z0-9]{1,3}$/.test(i||"");
-const bub = (b, big) => `<i class="bub ${big?"big":""} ${isTxt(b.i)?"t":""}" style="background:${b.c}">${esc(b.i)}</i>`;
+const bub = (b, big) => b.img ? `<i class="bub img ${big?"big":""}" style="background-image:url('${b.img}')"></i>`
+  : `<i class="bub ${big?"big":""} ${isTxt(b.i)?"t":""}" style="background:${b.c}">${esc(b.i)}</i>`;
+const catIcon = c => c.img ? `<i class="mini" style="background-image:url('${c.img}')"></i>` : esc(c.icon);
 function dayBubbles(d, evs){
   const out = [], t = shiftOn(d), seen = new Set();
   if (t) out.push({c:t.color, i:t.icon||t.short});
-  evs.forEach(e => { const c = catOf(e.cat); if (c.bubble && !seen.has(c.id)){ seen.add(c.id); out.push({c:c.color, i:c.icon}); } });
+  evs.forEach(e => { const c = catOf(e.cat); if (c.bubble && !seen.has(c.id)){ seen.add(c.id); out.push({c:c.color, i:c.icon, img:c.img}); } });
   return out;
 }
 const fmtK = n => n >= 10000 ? (n/1000).toFixed(0)+"k" : n >= 1000 ? (n/1000).toFixed(1).replace(".",",")+"k" : String(n);
@@ -676,7 +683,7 @@ function evRow(e){
   return `<div class="ev" data-id="${e.id}"><div class="bar" style="background:${c.color}"></div>
     <div class="t">${e.allDay ? "ganztägig" : esc(e.start||"") + (e.end ? "<br>" + esc(e.end) : "")}</div>
     <div class="b"><div class="title">${esc(e.title)}</div>
-      <div class="meta">${c.icon} ${esc(c.name)}${e.loc?" · 📍 "+esc(e.loc):""}${e.repeat&&e.repeat!=="none"?" · ↻ "+REP[e.repeat]:""}</div>
+      <div class="meta">${catIcon(c)} ${esc(c.name)}${e.loc?" · 📍 "+esc(e.loc):""}${e.repeat&&e.repeat!=="none"?" · ↻ "+REP[e.repeat]:""}</div>
       ${e.note?`<div class="note">${esc(e.note)}</div>`:""}</div></div>`;
 }
 function shiftRow(t){
@@ -790,7 +797,7 @@ function paintColors(el, cur, set){
 // ---------- Termin-Editor ----------
 let editing = null, evCat = "privat";
 function paintCats(){
-  $("fCats").innerHTML = cats.map(c => `<button data-c="${c.id}" class="${c.id===evCat?"on":""}" style="--cc:${c.color};${c.id===evCat?`background:${c.color};color:#fff`:""}">${c.icon} ${esc(c.name)}</button>`).join("");
+  $("fCats").innerHTML = cats.map(c => `<button data-c="${c.id}" class="${c.id===evCat?"on":""}" style="--cc:${c.color};${c.id===evCat?`background:${c.color};color:#fff`:""}">${catIcon(c)} ${esc(c.name)}</button>`).join("");
   $("fCats").querySelectorAll("button").forEach(b => b.onclick = () => { evCat = b.dataset.c; paintCats(); catChosen(); });
   $("fTitle").placeholder = `Titel (leer = „${catOf(evCat).name}“)`;
 }
@@ -845,7 +852,7 @@ function renderMenu(){
   $("optHol").checked = opts.holidays; $("optHealth").checked = opts.health;
   $("catList").innerHTML = cats.map(c => {
     const n = events.filter(e => e.cat === c.id).length;
-    return `<div class="row"><button class="lbl" data-edit="${c.id}"><span style="color:${c.color};font-size:20px">●</span>${c.icon} ${esc(c.name)} <small>${n}</small></button>
+    return `<div class="row"><button class="lbl" data-edit="${c.id}"><span style="color:${c.color};font-size:20px">●</span>${catIcon(c)} ${esc(c.name)} <small>${n}</small></button>
       <label class="switch"><input type="checkbox" data-vis="${c.id}" ${opts.hidden.includes(c.id)?"":"checked"}><span></span></label></div>`;
   }).join("") + `<button class="menu-btn add-btn" id="addCat">+ Kategorie hinzufügen</button>`;
   $("catList").querySelectorAll("[data-vis]").forEach(i => i.onchange = () => {
@@ -872,10 +879,24 @@ $("optHealth").onchange = () => { opts.health = $("optHealth").checked; save(K.o
 $("optHol").onchange = () => { opts.holidays = $("optHol").checked; save(K.opt, opts); render(); };
 const backToMenu = () => { renderMenu(); show($("menuSheet")); };
 
-let editCat = null, catColor = COLORS[0];
+let editCat = null, catColor = COLORS[0], catImg = null;
+function showCatImg(){ const p = $("cImgPrev"); p.style.display = catImg ? "" : "none"; $("cImgDel").style.display = catImg ? "" : "none";
+  if (catImg){ p.className = "bub big img"; p.style.backgroundImage = `url('${catImg}')`; } }
+$("cImgPick").onclick = () => $("cImgFile").click();
+$("cImgDel").onclick = () => { catImg = null; showCatImg(); };
+$("cImgFile").onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const url = URL.createObjectURL(f), im = new Image();
+  im.onload = () => { const S = 128, cv = document.createElement("canvas"); cv.width = cv.height = S;
+    const s = Math.min(im.width, im.height), ctx = cv.getContext("2d");
+    ctx.drawImage(im, (im.width - s)/2, (im.height - s)/2, s, s, 0, 0, S, S);
+    catImg = cv.toDataURL("image/png"); URL.revokeObjectURL(url); showCatImg(); };
+  im.onerror = () => toast("Bild konnte nicht gelesen werden");
+  im.src = url; e.target.value = "";
+};
 function openCat(c){
   editCat = c; $("catHeading").textContent = c ? "Kategorie bearbeiten" : "Neue Kategorie";
-  $("cName").value = c ? c.name : ""; $("cIcon").value = c ? c.icon : ""; $("cBubble").checked = c ? !!c.bubble : false;
+  $("cName").value = c ? c.name : ""; $("cIcon").value = c ? c.icon : ""; $("cBubble").checked = c ? !!c.bubble : false; catImg = c ? (c.img||null) : null; showCatImg();
   catColor = c ? c.color : COLORS[(cats.length) % COLORS.length];
   paintColors($("cColors"), catColor, v => catColor = v);
   $("catDelete").style.display = c && cats.length > 1 ? "" : "none";
@@ -884,7 +905,8 @@ function openCat(c){
 $("catCancel").onclick = backToMenu;
 $("catSave").onclick = () => {
   const name = $("cName").value.trim(); if (!name){ toast("Bitte einen Namen eingeben"); return; }
-  const data = {name, icon: $("cIcon").value.trim() || "•", color: catColor, bubble: $("cBubble").checked};
+  const data = {name, icon: $("cIcon").value.trim() || "•", color: catColor, bubble: $("cBubble").checked, img: catImg || undefined};
+  if (!catImg && editCat) delete editCat.img;
   if (editCat) Object.assign(editCat, data); else cats.push(Object.assign({id:uid()}, data));
   save(K.cat, cats); render(); backToMenu();
 };
@@ -1012,10 +1034,12 @@ $("importFile").onchange = async e => {
     const valid = list.filter(x => x && x.id && x.title && /^\d{4}-\d{2}-\d{2}$/.test(x.date));
     const nShift = data.shifts ? Object.keys(data.shifts).length : 0;
     const rem = Array.isArray(data.remove) ? data.remove : [], nRem = events.filter(e => rem.includes(e.id)).length;
-    if (!valid.length && !nShift && !data.health && !rem.length) throw 0;
-    if (!confirm(`${valid.length} Termine${nShift?` und ${nShift} Dienste`:""} gefunden${nRem?`, ${nRem} veraltete Termine werden entfernt`:""}. Importieren? Vorhandene gleiche Termine werden aktualisiert.`)) return;
+    if (!valid.length && !nShift && !data.health && !rem.length && !(data.categories||[]).some(c => c && c.img)) throw 0;
+    if ((valid.length || nShift || nRem) && !confirm(`${valid.length} Termine${nShift?` und ${nShift} Dienste`:""} gefunden${nRem?`, ${nRem} veraltete Termine werden entfernt`:""}. Importieren? Vorhandene gleiche Termine werden aktualisiert.`)) return;
     if (rem.length) events = events.filter(e => !rem.includes(e.id));
-    (data.categories||[]).forEach(c => { if (c && c.id && !cats.some(x => x.id === c.id)) cats.push(c); });
+    (data.categories||[]).forEach(c => { if (!c || !c.id) return; const x = cats.find(y => y.id === c.id);
+      if (x){ if (c.img){ x.img = c.img; x.bubble = true; } } else if (c.name) cats.push(c); });
+    const nImg = (data.categories||[]).filter(c => c && c.img).length;
     (data.templates||[]).forEach(t => { if (!t || !t.id) return; const i = tpls.findIndex(x => x.id === t.id); if (i >= 0) tpls[i] = Object.assign({}, tpls[i], t); else tpls.push(t); });
     if (data.shifts) Object.assign(shifts, data.shifts);
     if (data.health) Object.assign(health, data.health);
@@ -1023,7 +1047,7 @@ $("importFile").onchange = async e => {
     valid.forEach(x => { if (!x.cat || !cats.some(c => c.id === x.cat)) x.cat = "privat";
       const i = events.findIndex(y => y.id === x.id); if (i >= 0){ events[i] = x; upd++; } else { events.push(x); neu++; } });
     if (!cats.some(c => c.id === "privat")) cats.unshift(DEF_CATS[0]);
-    saveAll(); render(); hide(); toast(`${neu} neu, ${upd} aktualisiert${nRem?`, ${nRem} entfernt`:""}${nShift?` · ${nShift} Dienste`:""}`);
+    saveAll(); render(); hide(); toast(nImg && !valid.length ? `${nImg} Symbole aktualisiert` : `${neu} neu, ${upd} aktualisiert${nRem?`, ${nRem} entfernt`:""}${nShift?` · ${nShift} Dienste`:""}`);
   }catch(err){ toast("Datei konnte nicht gelesen werden"); }
   e.target.value = "";
 };
