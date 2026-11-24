@@ -1011,8 +1011,10 @@ $("importFile").onchange = async e => {
     const data = JSON.parse(await f.text()), list = Array.isArray(data) ? data : (data.events || []);
     const valid = list.filter(x => x && x.id && x.title && /^\d{4}-\d{2}-\d{2}$/.test(x.date));
     const nShift = data.shifts ? Object.keys(data.shifts).length : 0;
-    if (!valid.length && !nShift && !data.health) throw 0;
-    if (!confirm(`${valid.length} Termine${nShift?` und ${nShift} Dienste`:""} gefunden. Importieren? Vorhandene gleiche Termine werden aktualisiert.`)) return;
+    const rem = Array.isArray(data.remove) ? data.remove : [], nRem = events.filter(e => rem.includes(e.id)).length;
+    if (!valid.length && !nShift && !data.health && !rem.length) throw 0;
+    if (!confirm(`${valid.length} Termine${nShift?` und ${nShift} Dienste`:""} gefunden${nRem?`, ${nRem} veraltete Termine werden entfernt`:""}. Importieren? Vorhandene gleiche Termine werden aktualisiert.`)) return;
+    if (rem.length) events = events.filter(e => !rem.includes(e.id));
     (data.categories||[]).forEach(c => { if (c && c.id && !cats.some(x => x.id === c.id)) cats.push(c); });
     (data.templates||[]).forEach(t => { if (!t || !t.id) return; const i = tpls.findIndex(x => x.id === t.id); if (i >= 0) tpls[i] = Object.assign({}, tpls[i], t); else tpls.push(t); });
     if (data.shifts) Object.assign(shifts, data.shifts);
@@ -1021,7 +1023,7 @@ $("importFile").onchange = async e => {
     valid.forEach(x => { if (!x.cat || !cats.some(c => c.id === x.cat)) x.cat = "privat";
       const i = events.findIndex(y => y.id === x.id); if (i >= 0){ events[i] = x; upd++; } else { events.push(x); neu++; } });
     if (!cats.some(c => c.id === "privat")) cats.unshift(DEF_CATS[0]);
-    saveAll(); render(); hide(); toast(`${neu} neu, ${upd} aktualisiert${nShift?` · ${nShift} Dienste`:""}`);
+    saveAll(); render(); hide(); toast(`${neu} neu, ${upd} aktualisiert${nRem?`, ${nRem} entfernt`:""}${nShift?` · ${nShift} Dienste`:""}`);
   }catch(err){ toast("Datei konnte nicht gelesen werden"); }
   e.target.value = "";
 };
