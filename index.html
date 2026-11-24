@@ -538,11 +538,11 @@ const DEF_CATS = [
 const DEF_TPLS = [
   {id:"b", short:"B", name:"Büro", icon:"g:office", allDay:false, start:"07:00", end:"15:30", color:"#8b6cf0"},
   {id:"ho", short:"HO", name:"Homeoffice", icon:"g:homeoffice", allDay:false, start:"07:00", end:"15:30", color:"#0ea5e9"},
-  {id:"dr", short:"DR", name:"Dienstreise", icon:"🚗", allDay:true, start:"", end:"", color:"#14b8a6"},
-  {id:"bs", short:"BS", name:"Bereitschaft", icon:"📞", allDay:true, start:"", end:"", color:"#f97316"},
-  {id:"u", short:"U", name:"Urlaub", icon:"🌴", allDay:true, start:"", end:"", color:"#22c55e"},
-  {id:"ues", short:"ÜS", name:"Überstundenabbau", icon:"⏱️", allDay:true, start:"", end:"", color:"#ec4899"},
-  {id:"f", short:"F", name:"Frei", icon:"🏠", allDay:true, start:"", end:"", color:"#f0b429"}
+  {id:"dr", short:"DR", name:"Dienstreise", icon:"g:car", allDay:true, start:"", end:"", color:"#14b8a6"},
+  {id:"bs", short:"BS", name:"Bereitschaft", icon:"g:phone", allDay:true, start:"", end:"", color:"#f97316"},
+  {id:"u", short:"U", name:"Urlaub", icon:"g:palm", allDay:true, start:"", end:"", color:"#22c55e"},
+  {id:"ues", short:"ÜS", name:"Überstundenabbau", icon:"g:clock", allDay:true, start:"", end:"", color:"#ec4899"},
+  {id:"f", short:"F", name:"Frei", icon:"g:home", allDay:true, start:"", end:"", color:"#f0b429"}
 ];
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -560,10 +560,12 @@ let health = load(K.hl, {});
 let sync = load(K.sync, {url:"", key:"", secret:"", last:null});
 if (!cats.some(c => c.id === "engie")) cats.splice(Math.min(2,cats.length), 0, {id:"engie", name:"ENGIE", icon:"⚡", color:"#00aaff"});
 // Migration: Symbole/Blasen ergänzen
-const TPL_ICON = {b:"g:office", ho:"g:homeoffice", dr:"🚗", bs:"📞", u:"🌴", ues:"⏱️", f:"🏠"};
-tpls.forEach(t => { if (!t.icon) t.icon = TPL_ICON[t.id] || t.short;
+const TPL_ICON = {b:"g:office", ho:"g:homeoffice", dr:"g:car", bs:"g:phone", u:"g:palm", ues:"g:clock", f:"g:home"};
+const migrateTpls = () => tpls.forEach(t => { if (!t.icon) t.icon = TPL_ICON[t.id] || t.short;
   if (t.id === "b" && t.icon === "☕") t.icon = "g:office";
-  if (t.id === "ho" && t.icon === "💻") t.icon = "g:homeoffice"; });
+  if (t.id === "ho" && t.icon === "💻") t.icon = "g:homeoffice";
+  const OLD = {dr:"🚗", bs:"📞", u:"🌴", ues:"⏱️", f:"🏠"}; if (OLD[t.id] && t.icon === OLD[t.id]) t.icon = TPL_ICON[t.id]; });
+migrateTpls();
 cats.forEach(c => {
   if (c.bubble === undefined) c.bubble = (c.id === "gala" || c.id === "f1");
   if (c.id === "gala" && c.icon === "⚽" && c.color === "#e4a11b"){ c.icon = "GS"; c.color = "#b8361e"; }
@@ -1167,6 +1169,7 @@ $("importFile").onchange = async e => {
       if (x){ if (c.img){ x.img = c.img; x.bubble = true; } } else if (c.name) cats.push(c); });
     const nImg = (data.categories||[]).filter(c => c && c.img).length;
     (data.templates||[]).forEach(t => { if (!t || !t.id) return; const i = tpls.findIndex(x => x.id === t.id); if (i >= 0) tpls[i] = Object.assign({}, tpls[i], t); else tpls.push(t); });
+    migrateTpls();
     if (data.shifts) Object.assign(shifts, data.shifts);
     if (data.health) Object.assign(health, data.health);
     let neu = 0, upd = 0;
