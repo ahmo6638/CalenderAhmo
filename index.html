@@ -360,6 +360,7 @@ body.v-week #cal{flex:none}
   <div class="grab"></div>
   <div class="sheet-head"><button id="hCancel">Abbrechen</button><h3 id="hHeading">Gesundheit</h3><button class="save" id="hSave">Sichern</button></div>
   <button class="paste" id="hPaste">📋 Aus Kurzbefehl einfügen</button>
+  <div class="field"><input type="text" id="hLine" placeholder="…oder Zeile hier einsetzen (lange drücken → Einsetzen)" autocomplete="off"></div>
   <div class="field">
     <div class="row"><label>👣 Schritte</label><input type="text" inputmode="numeric" id="hSteps" placeholder="0"></div>
     <div class="row"><label>❤️ Ø Herzfrequenz (bpm)</label><input type="text" inputmode="numeric" id="hHr" placeholder="–"></div>
@@ -783,7 +784,7 @@ function openHealth(){
   const h = health[ymd(selected)] || {};
   $("hHeading").textContent = `${selected.getDate()}. ${MON3[selected.getMonth()]}`;
   $("hSteps").value = h.steps ?? ""; $("hHr").value = h.hr ?? ""; $("hSleep").value = h.sleep != null ? fmtH(h.sleep) : "";
-  hQ = h.q || 0; paintStars(); $("hDelete").style.display = health[ymd(selected)] ? "" : "none"; show($("hSheet"));
+  $("hLine").value = ""; hQ = h.q || 0; paintStars(); $("hDelete").style.display = health[ymd(selected)] ? "" : "none"; show($("hSheet"));
 }
 $("hCancel").onclick = hide;
 $("hSave").onclick = () => {
@@ -815,6 +816,11 @@ async function pasteHealth(){
   }catch(e){ toast("Einfügen nicht erlaubt – bitte erneut tippen"); }
 }
 $("hPaste").onclick = pasteHealth;
+$("hLine").addEventListener("input", () => {
+  const v = $("hLine").value; if (!/\d{4}-\d{2}-\d{2}/.test(v)) return;
+  const n = parseHealth(v); if (!n){ toast("Zeile nicht erkannt"); return; }
+  save(K.hl, health); $("hLine").value = ""; hide(); render(); toast("Gesundheitsdaten übernommen");
+});
 $("mPasteHealth").onclick = pasteHealth;
 
 // ---------- Import / Export ----------
