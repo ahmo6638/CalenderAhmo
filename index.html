@@ -345,6 +345,14 @@ body.v-month .weekdays{flex:none;border-bottom:1px solid var(--line)}
   .mscroll .day{min-height:60px}
   .mtitle{font-size:14px;padding:6px 10px 3px}
 }
+.bub .gl{width:62%;height:62%}
+.cluster .bub .gl{width:68%;height:68%}
+.sh .gl{width:12px;height:12px;vertical-align:-2px}
+.tpl .sh .gl{width:14px;height:14px}
+.glyphs{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px}
+.glyphs button{width:38px;height:38px;border-radius:50%;background:var(--muted);display:grid;place-items:center;border:2px solid transparent}
+.glyphs button.on{border-color:var(--text);background:var(--accent)}
+.glyphs .gl{width:22px;height:22px}
 </style>
 </head>
 <body class="v-month">
@@ -480,7 +488,8 @@ body.v-month .weekdays{flex:none;border-bottom:1px solid var(--line)}
   <div class="field">
     <div class="row"><label>Name</label><input type="text" id="tName" maxlength="24" placeholder="z. B. Büro"></div>
     <div class="row"><label>Kürzel</label><input type="text" id="tShort" maxlength="3" placeholder="B"></div>
-    <div class="row"><label>Symbol</label><input type="text" id="tIcon" maxlength="4" placeholder="☕"></div>
+    <div class="row"><label>Symbol</label><input type="text" id="tIcon" maxlength="16" placeholder="Emoji oder unten wählen"></div>
+    <div class="glyphs" id="tGlyphs"></div>
   </div>
   <div class="field">
     <div class="row"><label>Ganztägig</label><label class="switch"><input type="checkbox" id="tAllDay"><span></span></label></div>
@@ -527,8 +536,8 @@ const DEF_CATS = [
   {id:"f1", name:"Formel 1", icon:"🏎️", color:"#5b9be0", bubble:true}
 ];
 const DEF_TPLS = [
-  {id:"b", short:"B", name:"Büro", icon:"☕", allDay:false, start:"07:00", end:"15:30", color:"#8b6cf0"},
-  {id:"ho", short:"HO", name:"Homeoffice", icon:"💻", allDay:false, start:"07:00", end:"15:30", color:"#0ea5e9"},
+  {id:"b", short:"B", name:"Büro", icon:"g:office", allDay:false, start:"07:00", end:"15:30", color:"#8b6cf0"},
+  {id:"ho", short:"HO", name:"Homeoffice", icon:"g:homeoffice", allDay:false, start:"07:00", end:"15:30", color:"#0ea5e9"},
   {id:"dr", short:"DR", name:"Dienstreise", icon:"🚗", allDay:true, start:"", end:"", color:"#14b8a6"},
   {id:"bs", short:"BS", name:"Bereitschaft", icon:"📞", allDay:true, start:"", end:"", color:"#f97316"},
   {id:"u", short:"U", name:"Urlaub", icon:"🌴", allDay:true, start:"", end:"", color:"#22c55e"},
@@ -551,8 +560,10 @@ let health = load(K.hl, {});
 let sync = load(K.sync, {url:"", key:"", secret:"", last:null});
 if (!cats.some(c => c.id === "engie")) cats.splice(Math.min(2,cats.length), 0, {id:"engie", name:"ENGIE", icon:"⚡", color:"#00aaff"});
 // Migration: Symbole/Blasen ergänzen
-const TPL_ICON = {b:"☕", ho:"💻", dr:"🚗", bs:"📞", u:"🌴", ues:"⏱️", f:"🏠"};
-tpls.forEach(t => { if (!t.icon) t.icon = TPL_ICON[t.id] || t.short; });
+const TPL_ICON = {b:"g:office", ho:"g:homeoffice", dr:"🚗", bs:"📞", u:"🌴", ues:"⏱️", f:"🏠"};
+tpls.forEach(t => { if (!t.icon) t.icon = TPL_ICON[t.id] || t.short;
+  if (t.id === "b" && t.icon === "☕") t.icon = "g:office";
+  if (t.id === "ho" && t.icon === "💻") t.icon = "g:homeoffice"; });
 cats.forEach(c => {
   if (c.bubble === undefined) c.bubble = (c.id === "gala" || c.id === "f1");
   if (c.id === "gala" && c.icon === "⚽" && c.color === "#e4a11b"){ c.icon = "GS"; c.color = "#b8361e"; }
@@ -620,10 +631,26 @@ function eventsOn(d){
     .sort((a,b) => (a.allDay?"":a.start||"").localeCompare(b.allDay?"":b.start||"") || a.title.localeCompare(b.title));
 }
 const shiftOn = d => tplOf(shifts[ymd(d)]);
-const shBadge = t => t ? `<span class="sh" style="background:${t.color}"><span class="si">${esc(t.icon||"")}</span>${esc(t.short)}</span>` : "";
+const shBadge = t => t ? `<span class="sh" style="background:${t.color}"><span class="si">${iconHTML(t.icon)}</span>${esc(t.short)}</span>` : "";
+// Eigene Glyphen (weiße Linien-Symbole wie bei Supershift)
+const GLYPH = {
+  office:'<rect x="5" y="3" width="14" height="18" rx="1.6"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2M10.5 21v-3h3v3"/>',
+  homeoffice:'<path d="M3 11.2L12 4l9 7.2"/><path d="M5.5 9.5V20h13V9.5"/><rect x="8.3" y="11.6" width="7.4" height="4.8" rx=".7"/><path d="M7 18.3h10"/>',
+  briefcase:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3 12.5h18"/>',
+  car:'<path d="M5 16V12l1.8-4.6A2 2 0 0 1 8.7 6h6.6a2 2 0 0 1 1.9 1.4L19 12v4"/><rect x="3.5" y="12" width="17" height="5" rx="1.5"/><path d="M6 17v2M18 17v2"/><circle cx="7.5" cy="14.5" r=".6" fill="#fff"/><circle cx="16.5" cy="14.5" r=".6" fill="#fff"/>',
+  plane:'<path d="M10.5 21l1.5-1v-5l8 2.5v-2L12 10V4.5a1.5 1.5 0 0 0-3 0V10l-8 5.5v2l8-2.5v5l1.5 1z" transform="translate(1.5 0)"/>',
+  phone:'<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
+  clock:'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/>',
+  home:'<path d="M3 11.2L12 4l9 7.2"/><path d="M5.5 9.5V20h4.5v-5h4v5h4.5V9.5"/>',
+  palm:'<path d="M12 21v-9"/><path d="M12 12c-1-3-4-4-7-3 2-3 6-3 7 0 1-3 5-3 7 0-3-1-6 0-7 3z"/><path d="M12 9c0-3 2-5 5-5-1 2-3 3-5 5zM12 9c0-3-2-5-5-5 1 2 3 3 5 5z"/><path d="M7 21h10"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'
+};
+const isGlyph = i => typeof i === "string" && i.startsWith("g:") && GLYPH[i.slice(2)];
+const glyphSvg = (i, cls = "") => `<svg class="gl ${cls}" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${GLYPH[i.slice(2)]}</svg>`;
+const iconHTML = i => isGlyph(i) ? glyphSvg(i) : esc(i||"");
 const isTxt = i => /^[A-Za-z0-9]{1,3}$/.test(i||"");
 const bub = (b, big) => b.img ? `<i class="bub img ${big?"big":""}" style="background-image:url('${b.img}')"></i>`
-  : `<i class="bub ${big?"big":""} ${isTxt(b.i)?"t":""}" style="background:${b.c}">${esc(b.i)}</i>`;
+  : `<i class="bub ${big?"big":""} ${isTxt(b.i)?"t":""}" style="background:${b.c}">${iconHTML(b.i)}</i>`;
 const catIcon = c => c.img ? `<i class="mini" style="background-image:url('${c.img}')"></i>` : esc(c.icon);
 function dayBubbles(d, evs){
   const out = [], t = shiftOn(d), seen = new Set();
@@ -1009,11 +1036,19 @@ $("catDelete").onclick = () => {
 };
 
 let editTpl = null, tplColor = COLORS[0];
+let tplGlyph = null;
+function paintGlyphs(){
+  const v = $("tIcon").value.trim(); if (v.startsWith("g:")){ tplGlyph = v; $("tIcon").value = ""; } else if (v) tplGlyph = null;
+  const cur = tplGlyph || "";
+  $("tGlyphs").innerHTML = Object.keys(GLYPH).map(k => `<button data-g="g:${k}" class="${cur==="g:"+k?"on":""}" style="${cur==="g:"+k?`background:${tplColor}`:""}">${glyphSvg("g:"+k)}</button>`).join("");
+  $("tGlyphs").querySelectorAll("button").forEach(b => b.onclick = () => { tplGlyph = b.dataset.g; $("tIcon").value = ""; paintGlyphs(); });
+  $("tIcon").oninput = () => { if ($("tIcon").value.trim()){ tplGlyph = null; paintGlyphs(); } };
+}
 const toggleTTime = () => document.querySelectorAll(".tTime").forEach(r => r.style.display = $("tAllDay").checked ? "none" : "");
 $("tAllDay").onchange = toggleTTime;
 function openTpl(t){
   editTpl = t; $("tplHeading").textContent = t ? "Dienst bearbeiten" : "Neuer Dienst";
-  $("tName").value = t ? t.name : ""; $("tShort").value = t ? t.short : ""; $("tIcon").value = t ? (t.icon||"") : "";
+  $("tName").value = t ? t.name : ""; $("tShort").value = t ? t.short : ""; tplGlyph = null; $("tIcon").value = t ? (t.icon||"") : ""; paintGlyphs();
   $("tAllDay").checked = t ? t.allDay : false; $("tStart").value = t ? t.start : "08:00"; $("tEnd").value = t ? t.end : "16:30";
   tplColor = t ? t.color : COLORS[tpls.length % COLORS.length];
   paintColors($("tColors"), tplColor, v => tplColor = v);
@@ -1024,7 +1059,7 @@ $("tplSave").onclick = () => {
   const name = $("tName").value.trim(), short = $("tShort").value.trim().toUpperCase();
   if (!name || !short){ toast("Name und Kürzel ausfüllen"); return; }
   const allDay = $("tAllDay").checked;
-  const data = {name, short, icon: $("tIcon").value.trim() || short, allDay, start: allDay?"":$("tStart").value, end: allDay?"":$("tEnd").value, color: tplColor};
+  const data = {name, short, icon: $("tIcon").value.trim() || tplGlyph || short, allDay, start: allDay?"":$("tStart").value, end: allDay?"":$("tEnd").value, color: tplColor};
   if (editTpl) Object.assign(editTpl, data); else tpls.push(Object.assign({id:uid()}, data));
   save(K.tpl, tpls); render(); backToMenu();
 };
