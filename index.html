@@ -315,6 +315,14 @@ body.v-week #cal{flex:none}
     <div class="row"><label>Feiertage NRW</label><label class="switch"><input type="checkbox" id="optHol"><span></span></label></div>
     <div class="row"><label>Gesundheit im Kalender</label><label class="switch"><input type="checkbox" id="optHealth"><span></span></label></div>
   </div>
+  <div class="sec">Automatischer Sync (Supabase)</div>
+  <div class="field">
+    <div class="row"><label>Project URL</label><input type="text" id="sUrl" placeholder="https://xyz.supabase.co" autocomplete="off" autocapitalize="off"></div>
+    <div class="row"><label>API-Key</label><input type="text" id="sKey" placeholder="anon / publishable" autocomplete="off" autocapitalize="off"></div>
+    <div class="row"><label>Geheimcode</label><input type="text" id="sSecret" placeholder="kal_…" autocomplete="off" autocapitalize="off"></div>
+    <button class="menu-btn add-btn" id="sTest">🔄 Speichern &amp; jetzt synchronisieren</button>
+  </div>
+  <p class="hint" id="sInfo">Holt Schritte, Puls und Schlaf automatisch ab, sobald du die App öffnest.</p>
   <div class="sec">Daten</div>
   <div class="field">
     <button class="menu-btn" id="mPasteHealth">❤️ Gesundheitsdaten aus Zwischenablage</button>
@@ -375,7 +383,7 @@ body.v-week #cal{flex:none}
 <script>
 (() => {
 "use strict";
-const K = {ev:"kalender.events.v1", opt:"kalender.opts.v1", cat:"kalender.cats.v1", tpl:"kalender.tpls.v1", sh:"kalender.shifts.v1", hl:"kalender.health.v1"};
+const K = {ev:"kalender.events.v1", opt:"kalender.opts.v1", cat:"kalender.cats.v1", tpl:"kalender.tpls.v1", sh:"kalender.shifts.v1", hl:"kalender.health.v1", sync:"kalender.sync.v1"};
 const COLORS = ["#2563eb","#0ea5e9","#16a34a","#84cc16","#e4a11b","#f97316","#e10600","#ec4899","#a855f7","#6b7280"];
 const MONTHS = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
 const MON3 = ["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
@@ -411,6 +419,7 @@ let cats = load(K.cat, null) || DEF_CATS.slice();
 let tpls = load(K.tpl, null) || DEF_TPLS.slice();
 let shifts = load(K.sh, {});
 let health = load(K.hl, {});
+let sync = load(K.sync, {url:"", key:"", secret:"", last:null});
 if (!cats.some(c => c.id === "engie")) cats.splice(Math.min(2,cats.length), 0, {id:"engie", name:"ENGIE", icon:"⚡", color:"#00aaff"});
 // Alte Termine (v1) bekommen eine Kategorie
 events.forEach(e => { if (!e.cat) e.cat = "privat"; });
@@ -719,6 +728,14 @@ function renderMenu(){
   $("addTpl").onclick = () => openTpl(null);
 }
 $("btnMenu").onclick = () => { renderMenu(); show($("menuSheet")); };
+function fillSync(){ $("sUrl").value = sync.url||""; $("sKey").value = sync.key||""; $("sSecret").value = sync.secret||"";
+  $("sInfo").textContent = sync.last ? `Zuletzt synchronisiert: ${new Date(sync.last).toLocaleString("de-DE",{dateStyle:"short",timeStyle:"short"})}` : "Holt Schritte, Puls und Schlaf automatisch ab, sobald du die App öffnest."; }
+$("btnMenu").addEventListener("click", fillSync);
+$("sTest").onclick = async () => {
+  sync.url = $("sUrl").value.trim().replace(/\/+$/,""); sync.key = $("sKey").value.trim(); sync.secret = $("sSecret").value.trim();
+  save(K.sync, sync); const r = await pullHealth(true); fillSync();
+  if (r.ok) toast(`Verbunden ✓ – ${r.n} Tage geladen`); else toast(r.msg);
+};
 $("menuClose").onclick = hide;
 $("optHealth").onchange = () => { opts.health = $("optHealth").checked; save(K.opt, opts); render(); };
 $("optHol").onchange = () => { opts.holidays = $("optHol").checked; save(K.opt, opts); render(); };
@@ -823,6 +840,28 @@ $("hLine").addEventListener("input", () => {
 });
 $("mPasteHealth").onclick = pasteHealth;
 
+// ---------- Supabase-Sync ----------
+let syncing = false;
+async function pullHealth(manual){
+  if (!sync.url || !sync.key || !sync.secret) return {ok:false, msg:"Bitte URL, Key und Geheimcode eintragen"};
+  if (syncing) return {ok:false, msg:"Sync läuft schon"}; syncing = true;
+  try{
+    const headers = {"apikey": sync.key, "Content-Type": "application/json"};
+    if (!sync.key.startsWith("sb_")) headers.Authorization = "Bearer " + sync.key;
+    const since = ymd(addDays(new Date(), -60));
+    const res = await fetch(sync.url + "/rest/v1/rpc/get_health", {method:"POST", headers, body: JSON.stringify({p_secret: sync.secret, p_since: since})});
+    if (!res.ok){ const t = await res.text(); return {ok:false, msg: /forbidden/.test(t) ? "Geheimcode falsch" : res.status === 401 ? "API-Key falsch" : "Sync-Fehler "+res.status}; }
+    const rows = await res.json(); let n = 0;
+    rows.forEach(r => { if (!r.day) return; const h = Object.assign({}, health[r.day]);
+      if (r.steps != null) h.steps = r.steps; if (r.hr != null) h.hr = r.hr; if (r.sleep_h != null) h.sleep = Number(r.sleep_h);
+      health[r.day] = h; n++; });
+    save(K.hl, health); sync.last = Date.now(); save(K.sync, sync); render();
+    return {ok:true, n};
+  }catch(e){ return {ok:false, msg: navigator.onLine ? "Server nicht erreichbar – URL prüfen" : "Offline – Sync später"}; }
+  finally{ syncing = false; }
+}
+const autoSync = () => { if (sync.url && sync.key && sync.secret && (!sync.last || Date.now() - sync.last > 60000)) pullHealth(false); };
+
 // ---------- Import / Export ----------
 async function deliver(name, text, type){
   const file = new File([text], name, {type});
@@ -882,9 +921,10 @@ $("mExportIcs").onclick = () => {
 let tt;
 function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), 2000); }
 
-document.addEventListener("visibilitychange", () => { if (!document.hidden && !sameDay(today, new Date())){ today = new Date(); render(); } });
+document.addEventListener("visibilitychange", () => { if (document.hidden) return; if (!sameDay(today, new Date())){ today = new Date(); render(); } autoSync(); });
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 render();
+autoSync();
 })();
 </script>
 </body>
