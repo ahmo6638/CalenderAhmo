@@ -15,54 +15,105 @@
 <style>
 :root{
   --bg:#f4f5f7;--card:#fff;--text:#14161a;--muted:#6b7280;--line:#e5e7eb;
-  --accent:#2563eb;--today:#2563eb;--holiday:#dc2626;--sel:#e8efff;
+  --accent:#2563eb;--today:#2563eb;--holiday:#dc2626;--sel:#e8efff;--seg:#e7e9ee;
   --safe-top:env(safe-area-inset-top);--safe-bot:env(safe-area-inset-bottom);
 }
 @media (prefers-color-scheme:dark){
-  :root{--bg:#0f1115;--card:#181b21;--text:#f2f3f5;--muted:#9097a3;--line:#262a32;--sel:#1d2a45;--accent:#4f8cff;--today:#4f8cff;--holiday:#f87171}
+  :root{--bg:#0f1115;--card:#181b21;--text:#f2f3f5;--muted:#9097a3;--line:#262a32;--sel:#1d2a45;--accent:#4f8cff;--today:#4f8cff;--holiday:#f87171;--seg:#22262e}
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;overscroll-behavior:none}
-body{display:flex;flex-direction:column;padding-top:var(--safe-top)}
+body{display:flex;flex-direction:column;padding-top:var(--safe-top);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 6px}
-header h1{font-size:26px;margin:0;white-space:nowrap;font-weight:700;letter-spacing:-.3px}
+#cal{display:flex;flex-direction:column;flex:none;min-height:0}
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 4px;gap:8px}
+header h1{font-size:24px;margin:0;font-weight:700;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 header h1 span{color:var(--muted);font-weight:500}
-.hbtns{display:flex;gap:6px}
-.icon-btn{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:20px;color:var(--accent)}
+.hbtns{display:flex;gap:2px;flex:none}
+.icon-btn{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-size:20px;color:var(--accent)}
 .icon-btn:active{background:var(--sel)}
 .pill{padding:7px 12px;border-radius:999px;background:var(--sel);color:var(--accent);font-weight:600;font-size:14px}
+.toolbar{display:flex;align-items:center;gap:8px;padding:2px 16px 8px}
+.seg{display:flex;background:var(--seg);border-radius:10px;padding:2px;flex:1;max-width:320px}
+.seg button{flex:1;padding:6px 0;border-radius:8px;font-size:14px;font-weight:600;color:var(--muted)}
+.seg button.on{background:var(--card);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.tb-btn{padding:7px 11px;border-radius:10px;background:var(--seg);font-size:14px;font-weight:600;white-space:nowrap}
+.tb-btn.on{background:var(--accent);color:#fff}
+#main{min-height:0}
+/* ---------- Monat ---------- */
 .weekdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:0 8px;font-size:12px;color:var(--muted);text-align:center;font-weight:600}
 .weekdays div{padding:4px 0}
-#grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:0 8px;touch-action:pan-y}
-.day{aspect-ratio:1/1.05;display:flex;flex-direction:column;align-items:center;padding-top:5px;border-radius:12px;position:relative}
-.day .n{width:30px;height:30px;display:grid;place-items:center;border-radius:50%;font-size:16px;font-weight:500}
-.day.other .n{color:var(--muted);opacity:.45}
+.mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));padding:0 8px;touch-action:pan-y}
+.day{aspect-ratio:1/1.08;display:flex;flex-direction:column;align-items:center;padding-top:4px;border-radius:12px;position:relative;min-width:0}
+.day .top{display:flex;flex-direction:column;align-items:center;gap:1px}
+.day .n{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;font-size:16px;font-weight:500}
+.day.other{opacity:.4}
 .day.we .n{color:var(--muted)}
 .day.hol .n{color:var(--holiday)}
 .day.today .n{background:var(--today);color:#fff;font-weight:700}
 .day.sel{background:var(--sel)}
+.sh{font-size:10px;font-weight:800;color:#fff;border-radius:4px;padding:0 4px;line-height:14px;letter-spacing:.2px;white-space:nowrap}
 .dots{display:flex;gap:3px;margin-top:3px;height:6px}
 .dots i{width:6px;height:6px;border-radius:50%}
+.chips{display:none;width:100%;padding:0 3px;flex-direction:column;gap:2px;margin-top:2px;overflow:hidden}
+.chips b{font-weight:600;font-size:11px;line-height:1.25;padding:1px 4px;border-radius:4px;color:#fff;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+.chips em{font-style:normal;font-size:10px;color:var(--muted);text-align:left;padding-left:4px}
+body.painting .day:active,body.painting .wd:active{transform:scale(.94)}
+/* ---------- Woche ---------- */
+.week{display:flex;flex-direction:column;gap:6px;padding:0 12px 8px}
+.wd{display:grid;grid-template-columns:56px 1fr;gap:10px;background:var(--card);border-radius:14px;padding:9px 12px;text-align:left;min-height:54px;border:2px solid transparent}
+.wd.sel{border-color:var(--accent)}
+.wd .wh{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.wd .wdn{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase}
+.wd .wdd{font-size:20px;font-weight:700;line-height:1}
+.wd.today .wdd{color:var(--today)}
+.wd.hol .wdd{color:var(--holiday)}
+.wev{display:flex;flex-direction:column;gap:3px;min-width:0;justify-content:center}
+.wev b{font-size:13px;font-weight:600;padding:3px 7px;border-radius:6px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wev .hl{font-size:12px;color:var(--holiday);font-weight:600}
+.wev .none{font-size:13px;color:var(--muted)}
+/* ---------- Liste/Agenda ---------- */
+.agenda{padding:0 12px calc(100px + var(--safe-bot))}
+.ag-day{background:var(--card);border-radius:14px;padding:4px 14px;margin-bottom:10px}
+.ag-head{display:flex;justify-content:space-between;align-items:center;padding:9px 0 5px;font-weight:700;font-size:15px}
+.ag-head small{color:var(--muted);font-weight:500;font-size:13px}
+.ag-head.today{color:var(--today)}
+.more{display:block;margin:6px auto 0;padding:10px 18px;border-radius:12px;background:var(--sel);color:var(--accent);font-weight:600}
+/* ---------- Tagesliste ---------- */
 #list{flex:1;overflow:auto;background:var(--card);margin-top:8px;border-radius:20px 20px 0 0;
   padding:14px 16px calc(90px + var(--safe-bot));box-shadow:0 -1px 0 var(--line)}
 #list h2{font-size:17px;margin:0 0 2px}
-#list .sub{color:var(--muted);font-size:13px;margin-bottom:10px}
-.ev{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+#list .sub{color:var(--muted);font-size:13px;margin-bottom:8px}
+.ev{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);align-items:flex-start;cursor:pointer}
 .ev:last-child{border:0}
 .ev .bar{width:4px;align-self:stretch;border-radius:4px;flex:none}
 .ev .t{font-size:13px;color:var(--muted);width:62px;flex:none;line-height:1.35;padding-top:1px}
 .ev .b{flex:1;min-width:0}
 .ev .title{font-weight:600;font-size:16px;word-wrap:break-word}
+.ev .meta{font-size:12px;color:var(--muted);margin-top:1px}
 .ev .note{font-size:13px;color:var(--muted);margin-top:2px;white-space:pre-wrap;word-wrap:break-word}
-.ev .rep{font-size:12px;color:var(--muted)}
 .hol-row .title{color:var(--holiday)}
-.empty{color:var(--muted);text-align:center;padding:26px 0;font-size:15px}
+.shift-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;margin-bottom:6px;color:#fff;font-weight:600}
+.shift-row small{font-weight:500;opacity:.9}
+.empty{color:var(--muted);text-align:center;padding:22px 0;font-size:15px}
 #fab{position:fixed;right:20px;bottom:calc(20px + var(--safe-bot));width:58px;height:58px;border-radius:50%;
-  background:var(--accent);color:#fff;font-size:32px;line-height:1;box-shadow:0 6px 20px rgba(37,99,235,.4);display:grid;place-items:center}
+  background:var(--accent);color:#fff;font-size:32px;line-height:1;box-shadow:0 6px 20px rgba(37,99,235,.4);display:grid;place-items:center;z-index:5}
 #fab:active{transform:scale(.94)}
-/* Sheet */
+body.painting #fab{display:none}
+/* ---------- Dienst-Pinsel ---------- */
+#paintbar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);box-shadow:0 -4px 20px rgba(0,0,0,.15);
+  border-radius:18px 18px 0 0;padding:10px 12px calc(10px + var(--safe-bot));display:none}
+body.painting #paintbar{display:block}
+#paintbar .ph{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);margin:0 4px 8px}
+#paintbar .ph button{color:var(--accent);font-weight:700;font-size:15px}
+.tpls{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.tpls::-webkit-scrollbar{display:none}
+.tpl{flex:none;display:flex;align-items:center;gap:7px;padding:8px 12px 8px 8px;border-radius:12px;background:var(--bg);border:2px solid transparent;font-size:14px;font-weight:600}
+.tpl.on{border-color:var(--text)}
+.tpl .sh{font-size:12px;line-height:20px;padding:0 6px}
+/* ---------- Sheets ---------- */
 .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
 .backdrop.open{opacity:1;pointer-events:auto}
 .sheet{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-radius:20px 20px 0 0;z-index:11;
@@ -72,15 +123,20 @@ header h1 span{color:var(--muted);font-weight:500}
 .grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 10px}
 .sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .sheet-head h3{margin:0;font-size:17px}
-.sheet-head button{color:var(--accent);font-size:16px;padding:6px}
+.sheet-head button{color:var(--accent);font-size:16px;padding:6px;min-width:70px}
+.sheet-head button:first-child{text-align:left}.sheet-head button:last-child{text-align:right}
 .sheet-head .save{font-weight:700}
+.sec{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:16px 4px 6px;font-weight:600}
 .field{background:var(--bg);border-radius:12px;margin-bottom:12px;overflow:hidden}
-.row{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--line);gap:10px;min-height:46px}
+.row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line);gap:10px;min-height:46px}
 .row:last-child{border:0}
-.row label{font-size:16px}
+.row label,.row .lbl{font-size:16px}
+.row .lbl{display:flex;align-items:center;gap:8px;flex:1;text-align:left;min-width:0}
+.row .lbl small{color:var(--muted);font-size:13px}
 input,select,textarea{font:inherit;font-size:16px;color:var(--text);background:transparent;border:0;outline:0}
 input[type=text],textarea{width:100%;padding:12px 14px}
-textarea{min-height:70px;resize:none}
+.row input[type=text]{padding:0;text-align:right;width:60%}
+textarea{min-height:64px;resize:none}
 input[type=date],input[type=time],select{text-align:right;color:var(--accent)}
 .switch{position:relative;width:51px;height:31px;flex:none}
 .switch input{opacity:0;width:0;height:0}
@@ -91,84 +147,129 @@ input[type=date],input[type=time],select{text-align:right;color:var(--accent)}
 .colors{display:flex;gap:10px;padding:12px 14px;flex-wrap:wrap}
 .colors button{width:30px;height:30px;border-radius:50%;border:3px solid transparent}
 .colors button.on{border-color:var(--text)}
+.catpick{display:flex;gap:8px;padding:10px;flex-wrap:wrap}
+.catpick button{padding:7px 11px;border-radius:10px;background:var(--card);font-size:14px;font-weight:600;border:2px solid transparent}
+.catpick button.on{border-color:var(--cc)}
 .danger{width:100%;padding:13px;border-radius:12px;background:var(--bg);color:#ef4444;font-weight:600;font-size:16px}
 .menu-btn{width:100%;text-align:left;padding:14px;border-bottom:1px solid var(--line);font-size:16px}
 .menu-btn:last-child{border:0}
+.add-btn{color:var(--accent);font-weight:600}
 .hint{font-size:13px;color:var(--muted);padding:4px 4px 12px;line-height:1.4}
-/* Termin-Chips im Raster: nur auf großem Display sichtbar */
-.chips{display:none;width:100%;padding:0 3px;flex-direction:column;gap:2px;margin-top:2px;overflow:hidden}
-.chips b{font-weight:600;font-size:11px;line-height:1.25;padding:1px 4px;border-radius:4px;color:#fff;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
-.chips em{font-style:normal;font-size:10px;color:var(--muted);text-align:left;padding-left:4px}
-body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
-#cal{display:flex;flex-direction:column;flex:none}
+.health{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 8px;cursor:pointer}
+.health span{background:var(--bg);border-radius:10px;padding:7px 10px;font-size:14px;font-weight:600}
+.health span small{color:var(--muted);font-weight:500}
+.health .add{color:var(--accent)}
+.hmini{font-size:10px;color:var(--muted);font-weight:600;white-space:nowrap;margin-top:auto;padding:0 3px 1px;text-align:left;overflow:hidden;text-overflow:ellipsis}
+.wd .hmini{margin-top:4px;font-size:11px;text-align:center;white-space:normal}
+@media (max-width:559px){.day .hmini{display:none}}
+@media (min-width:560px) and (max-height:520px){.day .hmini{display:none}}
+.stars{display:flex;gap:4px}.stars button{font-size:24px;color:var(--line);padding:0 2px}.stars button.on{color:#f5b301}
+.paste{width:100%;padding:13px;border-radius:12px;background:var(--sel);color:var(--accent);font-weight:600;font-size:16px;margin-bottom:12px}
+.toast{position:fixed;left:50%;bottom:calc(150px + var(--safe-bot));transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);
+  padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:.25s;z-index:20;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%)}
 
-/* ===== iPhone Duo AUFGEKLAPPT, hochkant (inneres 7,6″-Display, ≈626 pt breit) ===== */
+/* Agenda füllt auf kleinem Display den ganzen Platz */
+body.v-agenda #cal{flex:1}
+body.v-agenda #main{flex:1;overflow:auto}
+body.v-agenda #list{display:none}
+body.v-week #cal{flex:none}
+
+/* ===== iPhone Duo AUFGEKLAPPT, hochkant (inneres 7,6″-Display, ≈626 pt) ===== */
 @media (min-width:560px){
-  header{padding:14px 22px 8px}
-  header h1{font-size:30px}
+  header{padding:14px 22px 6px} header h1{font-size:28px}
+  .toolbar{padding:2px 22px 10px}
   .weekdays{padding:0 14px;font-size:13px}
-  #grid{padding:0 14px;gap:3px}
-  .day{aspect-ratio:auto;height:clamp(70px,10.5vh,104px);align-items:stretch;padding:4px 2px;border:1px solid var(--line);border-radius:10px}
-  .day .n{width:26px;height:26px;font-size:14px;margin-left:3px}
+  .mgrid{padding:0 14px;gap:3px}
+  .day{aspect-ratio:auto;height:clamp(70px,10.5vh,104px);align-items:stretch;padding:4px 3px;border:1px solid var(--line);border-radius:10px}
+  .day .top{flex-direction:row;justify-content:space-between;padding-right:2px;gap:2px;min-width:0}
+  .day .sh{overflow:hidden;text-overflow:ellipsis}
+  .day .n{width:26px;height:26px;font-size:14px}
   .dots{display:none}
   .chips{display:flex}
-  #list{margin:10px 14px 0;border-radius:20px 20px 0 0}
+  .week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;padding:0 14px 8px}
+  .wd{display:flex;flex-direction:column;gap:8px;padding:8px 6px;min-height:clamp(240px,42vh,420px);border-radius:12px}
+  .wd .wh{align-items:center;width:100%}
+  .wev b{white-space:normal;font-size:12px;padding:3px 5px;line-height:1.25}
+  .wev{justify-content:flex-start}
+  .agenda{padding:0 22px calc(100px + var(--safe-bot))}
+  #list{margin:10px 14px 0}
 }
 
-/* ===== iPhone Duo AUFGEKLAPPT, quer (≈890 × 626 pt): Monat links, Tagesliste rechts ===== */
+/* ===== iPhone Duo AUFGEKLAPPT, quer (≈890 × 626 pt): Ansicht links, Tagesliste rechts ===== */
 @media (min-width:760px) and (min-aspect-ratio:5/4){
   body{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);grid-template-rows:100%;height:100vh;height:100dvh}
-  #cal{min-height:0;display:flex;flex-direction:column;padding-bottom:calc(12px + var(--safe-bot))}
-  #grid{flex:1;min-height:0;grid-auto-rows:1fr}
+  #cal{min-height:0;padding-bottom:calc(12px + var(--safe-bot))}
+  body.v-month #main,body.v-week #main,body.v-agenda #main{flex:1;display:flex;flex-direction:column;overflow:auto}
+  #cal{flex:1 !important}
+  .mgrid{flex:1;min-height:0;grid-auto-rows:1fr}
   .day{height:auto;min-height:0}
-  #list{margin:12px 14px calc(12px + var(--safe-bot)) 0;border-radius:20px;padding-bottom:90px;box-shadow:0 0 0 1px var(--line)}
+  .week{flex:1}
+  .wd{min-height:0}
+  #list,body.v-agenda #list{display:block;margin:12px 14px calc(12px + var(--safe-bot)) 0;border-radius:20px;padding-bottom:90px;box-shadow:0 0 0 1px var(--line)}
   #fab{right:calc(30px + env(safe-area-inset-right));bottom:calc(30px + var(--safe-bot))}
 }
 
-/* Zugeklappt quer (äußeres Display, ≈678 × 466 pt): Raster darf nicht über den Bildschirm wachsen */
+/* ===== Zugeklappt quer (äußeres Display, ≈678 × 466 pt) ===== */
 @media (min-width:560px) and (max-height:520px){
   body{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(240px,1fr);grid-template-rows:100%;height:100vh;height:100dvh}
-  #cal{min-height:0;display:flex;flex-direction:column;padding-bottom:calc(8px + var(--safe-bot))}
+  #cal{flex:1 !important;min-height:0;padding-bottom:calc(8px + var(--safe-bot))}
+  #main{flex:1;display:flex;flex-direction:column;overflow:auto}
   header{padding:6px 12px 2px} header h1{font-size:20px} .hbtns{gap:0}
-  #grid{flex:1;min-height:0;grid-auto-rows:1fr;padding:0 10px}
+  .toolbar{padding:0 12px 4px} .seg button{padding:4px 0}
+  .mgrid{flex:1;min-height:0;grid-auto-rows:1fr;padding:0 10px}
   .day{height:auto;min-height:0;border:0;align-items:center;padding:2px}
+  .day .top{flex-direction:column;justify-content:flex-start}
   .chips{display:none} .dots{display:flex}
-  #list{margin:8px 10px 8px 0;border-radius:18px;padding-bottom:80px}
+  .week{display:flex;flex-direction:column;padding:0 10px}
+  .wd{display:grid;grid-template-columns:50px 1fr;min-height:44px;padding:6px 10px}
+  .wd .wh{align-items:flex-start}
+  .wev b{white-space:nowrap}
+  #list,body.v-agenda #list{display:block;margin:8px 10px 8px 0;border-radius:18px;padding-bottom:80px}
 }
 
-/* Auf großen Displays: Eingabe als zentriertes Fenster statt Bottom-Sheet */
+/* Große Displays: Eingaben als zentriertes Fenster */
 @media (min-width:560px) and (min-height:521px){
   .sheet{left:50%;right:auto;bottom:auto;top:50%;width:min(520px,92vw);border-radius:22px;max-height:86vh;
     transform:translate(-50%,-46%) scale(.96);opacity:0;pointer-events:none;transition:transform .22s,opacity .22s;padding-bottom:20px}
   .sheet.open{transform:translate(-50%,-50%);opacity:1;pointer-events:auto}
   .grab{display:none}
+  #paintbar{left:50%;right:auto;width:min(620px,96vw);transform:translateX(-50%);bottom:calc(12px + var(--safe-bot));border-radius:18px;padding-bottom:10px}
 }
-.toast{position:fixed;left:50%;bottom:calc(95px + var(--safe-bot));transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);
-  padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:.25s;z-index:20;pointer-events:none}
-.toast.show{opacity:1;transform:translateX(-50%)}
 </style>
 </head>
-<body>
+<body class="v-month">
 <div id="cal">
-<header>
-  <h1 id="title">Monat <span>Jahr</span></h1>
-  <div class="hbtns">
-    <button class="pill" id="btnToday">Heute</button>
-    <button class="icon-btn" id="btnPrev" aria-label="Vorheriger Monat">‹</button>
-    <button class="icon-btn" id="btnNext" aria-label="Nächster Monat">›</button>
-    <button class="icon-btn" id="btnMenu" aria-label="Menü">⋯</button>
+  <header>
+    <h1 id="title">Kalender</h1>
+    <div class="hbtns">
+      <button class="pill" id="btnToday">Heute</button>
+      <button class="icon-btn" id="btnPrev" aria-label="Zurück">‹</button>
+      <button class="icon-btn" id="btnNext" aria-label="Weiter">›</button>
+      <button class="icon-btn" id="btnMenu" aria-label="Einstellungen">⋯</button>
+    </div>
+  </header>
+  <div class="toolbar">
+    <div class="seg" id="seg">
+      <button data-v="month" class="on">Monat</button>
+      <button data-v="week">Woche</button>
+      <button data-v="agenda">Liste</button>
+    </div>
+    <button class="tb-btn" id="btnPaint">🖌 Dienste</button>
   </div>
-</header>
-<div class="weekdays"><div>Mo</div><div>Di</div><div>Mi</div><div>Do</div><div>Fr</div><div>Sa</div><div>So</div></div>
-<div id="grid"></div>
+  <div id="main"></div>
 </div>
 <section id="list"></section>
 <button id="fab" aria-label="Neuer Termin">+</button>
 
+<div id="paintbar">
+  <div class="ph"><span id="paintInfo">Dienst wählen, dann Tage antippen</span><button id="paintDone">Fertig</button></div>
+  <div class="tpls" id="tplBar"></div>
+</div>
+
 <div class="backdrop" id="backdrop"></div>
 
-<!-- Termin-Sheet -->
+<!-- Termin -->
 <div class="sheet" id="evSheet">
   <div class="grab"></div>
   <div class="sheet-head">
@@ -176,9 +277,9 @@ body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-ri
     <h3 id="evHeading">Neuer Termin</h3>
     <button class="save" id="evSave">Sichern</button>
   </div>
-  <div class="field">
-    <input type="text" id="fTitle" placeholder="Titel" maxlength="120">
-  </div>
+  <div class="field"><input type="text" id="fTitle" placeholder="Titel" maxlength="120"></div>
+  <div class="field"><input type="text" id="fLoc" placeholder="Ort (optional)" maxlength="120"></div>
+  <div class="field"><div class="catpick" id="fCats"></div></div>
   <div class="field">
     <div class="row"><label>Ganztägig</label><label class="switch"><input type="checkbox" id="fAllDay"><span></span></label></div>
     <div class="row"><label>Datum</label><input type="date" id="fDate"></div>
@@ -188,43 +289,84 @@ body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-ri
   <div class="field">
     <div class="row"><label>Wiederholen</label>
       <select id="fRepeat">
-        <option value="none">Nie</option>
-        <option value="daily">Täglich</option>
-        <option value="weekly">Wöchentlich</option>
-        <option value="biweekly">Alle 2 Wochen</option>
-        <option value="monthly">Monatlich</option>
-        <option value="yearly">Jährlich</option>
-      </select>
-    </div>
+        <option value="none">Nie</option><option value="daily">Täglich</option><option value="weekly">Wöchentlich</option>
+        <option value="biweekly">Alle 2 Wochen</option><option value="monthly">Monatlich</option><option value="yearly">Jährlich</option>
+      </select></div>
     <div class="row"><label>Erinnerung</label>
       <select id="fRemind">
-        <option value="">Keine</option>
-        <option value="0">Zum Zeitpunkt</option>
-        <option value="15">15 Min. vorher</option>
-        <option value="60">1 Std. vorher</option>
-        <option value="1440">1 Tag vorher</option>
-      </select>
-    </div>
+        <option value="">Keine</option><option value="0">Zum Zeitpunkt</option><option value="15">15 Min. vorher</option>
+        <option value="60">1 Std. vorher</option><option value="1440">1 Tag vorher</option>
+      </select></div>
   </div>
-  <div class="field"><div class="colors" id="fColors"></div></div>
   <div class="field"><textarea id="fNote" placeholder="Notiz"></textarea></div>
   <button class="danger" id="evDelete">Termin löschen</button>
 </div>
 
-<!-- Menü-Sheet -->
+<!-- Einstellungen -->
 <div class="sheet" id="menuSheet">
   <div class="grab"></div>
-  <div class="sheet-head"><span></span><h3>Einstellungen</h3><button id="menuClose">Fertig</button></div>
+  <div class="sheet-head"><span style="min-width:70px"></span><h3>Einstellungen</h3><button id="menuClose">Fertig</button></div>
+  <div class="sec">Kategorien – Schalter = anzeigen</div>
+  <div class="field" id="catList"></div>
+  <div class="sec">Dienste</div>
+  <div class="field" id="tplList"></div>
+  <div class="sec">Allgemein</div>
   <div class="field">
-    <div class="row"><label>Feiertage NRW anzeigen</label><label class="switch"><input type="checkbox" id="optHol"><span></span></label></div>
+    <div class="row"><label>Feiertage NRW</label><label class="switch"><input type="checkbox" id="optHol"><span></span></label></div>
+    <div class="row"><label>Gesundheit im Kalender</label><label class="switch"><input type="checkbox" id="optHealth"><span></span></label></div>
   </div>
+  <div class="sec">Daten</div>
   <div class="field">
+    <button class="menu-btn" id="mPasteHealth">❤️ Gesundheitsdaten aus Zwischenablage</button>
+    <button class="menu-btn" id="mImportJson">📂 Datei importieren / Backup laden</button>
     <button class="menu-btn" id="mExportJson">💾 Backup sichern (.json)</button>
-    <button class="menu-btn" id="mImportJson">📂 Backup wiederherstellen</button>
-    <button class="menu-btn" id="mExportIcs">📅 Als .ics exportieren (für Apple Kalender)</button>
+    <button class="menu-btn" id="mExportIcs">📅 Als .ics exportieren (Apple Kalender)</button>
   </div>
-  <p class="hint">Deine Termine liegen nur auf diesem iPhone. Sichere ab und zu ein Backup in der Dateien-App – wenn du Safari-Websitedaten löschst, sind die Termine sonst weg.<br><br>Erinnerungen: Die .ics-Datei enthält deine Erinnerungen. Öffnest du sie, übernimmt Apple Kalender die Termine mit Benachrichtigung.</p>
+  <p class="hint">Alles liegt nur auf diesem iPhone. Sichere regelmäßig ein Backup in der Dateien-App – wenn Safari-Websitedaten gelöscht werden, sind die Daten sonst weg. Ein erneuter Import derselben Datei aktualisiert vorhandene Termine (z. B. neue Ergebnisse oder Anstoßzeiten).</p>
   <input type="file" id="importFile" accept=".json,application/json" hidden>
+</div>
+
+<!-- Kategorie bearbeiten -->
+<div class="sheet" id="catSheet">
+  <div class="grab"></div>
+  <div class="sheet-head"><button id="catCancel">Zurück</button><h3 id="catHeading">Kategorie</h3><button class="save" id="catSave">Sichern</button></div>
+  <div class="field">
+    <div class="row"><label>Name</label><input type="text" id="cName" maxlength="24" placeholder="z. B. Familie"></div>
+    <div class="row"><label>Symbol</label><input type="text" id="cIcon" maxlength="4" placeholder="🙂"></div>
+  </div>
+  <div class="field"><div class="colors" id="cColors"></div></div>
+  <button class="danger" id="catDelete">Kategorie löschen</button>
+</div>
+
+<!-- Dienst-Vorlage bearbeiten -->
+<div class="sheet" id="tplSheet">
+  <div class="grab"></div>
+  <div class="sheet-head"><button id="tplCancel">Zurück</button><h3 id="tplHeading">Dienst</h3><button class="save" id="tplSave">Sichern</button></div>
+  <div class="field">
+    <div class="row"><label>Name</label><input type="text" id="tName" maxlength="24" placeholder="z. B. Büro"></div>
+    <div class="row"><label>Kürzel</label><input type="text" id="tShort" maxlength="3" placeholder="B"></div>
+  </div>
+  <div class="field">
+    <div class="row"><label>Ganztägig</label><label class="switch"><input type="checkbox" id="tAllDay"><span></span></label></div>
+    <div class="row tTime"><label>Beginn</label><input type="time" id="tStart"></div>
+    <div class="row tTime"><label>Ende</label><input type="time" id="tEnd"></div>
+  </div>
+  <div class="field"><div class="colors" id="tColors"></div></div>
+  <button class="danger" id="tplDelete">Dienst löschen</button>
+</div>
+
+<!-- Gesundheit -->
+<div class="sheet" id="hSheet">
+  <div class="grab"></div>
+  <div class="sheet-head"><button id="hCancel">Abbrechen</button><h3 id="hHeading">Gesundheit</h3><button class="save" id="hSave">Sichern</button></div>
+  <button class="paste" id="hPaste">📋 Aus Kurzbefehl einfügen</button>
+  <div class="field">
+    <div class="row"><label>👣 Schritte</label><input type="text" inputmode="numeric" id="hSteps" placeholder="0"></div>
+    <div class="row"><label>❤️ Ø Herzfrequenz (bpm)</label><input type="text" inputmode="numeric" id="hHr" placeholder="–"></div>
+    <div class="row"><label>😴 Schlaf (Stunden)</label><input type="text" inputmode="decimal" id="hSleep" placeholder="z. B. 7,5"></div>
+    <div class="row"><label>Schlafqualität</label><div class="stars" id="hStars"></div></div>
+  </div>
+  <button class="danger" id="hDelete">Werte für diesen Tag löschen</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -232,30 +374,68 @@ body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-ri
 <script>
 (() => {
 "use strict";
-const KEY = "kalender.events.v1", OPT = "kalender.opts.v1";
-const COLORS = ["#2563eb","#16a34a","#f59e0b","#ef4444","#a855f7","#ec4899","#0ea5e9","#6b7280"];
+const K = {ev:"kalender.events.v1", opt:"kalender.opts.v1", cat:"kalender.cats.v1", tpl:"kalender.tpls.v1", sh:"kalender.shifts.v1", hl:"kalender.health.v1"};
+const COLORS = ["#2563eb","#0ea5e9","#16a34a","#84cc16","#e4a11b","#f97316","#e10600","#ec4899","#a855f7","#6b7280"];
 const MONTHS = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+const MON3 = ["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
 const WD = ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+const WD2 = ["So","Mo","Di","Mi","Do","Fr","Sa"];
 const REP = {daily:"täglich",weekly:"wöchentlich",biweekly:"alle 2 Wochen",monthly:"monatlich",yearly:"jährlich"};
+const DEF_CATS = [
+  {id:"privat", name:"Privat", icon:"👤", color:"#2563eb"},
+  {id:"arbeit", name:"Arbeit", icon:"💼", color:"#0ea5e9"},
+  {id:"engie", name:"ENGIE", icon:"⚡", color:"#00aaff"},
+  {id:"familie", name:"Familie", icon:"👨‍👩‍👧‍👦", color:"#16a34a"},
+  {id:"gala", name:"Galatasaray", icon:"⚽", color:"#e4a11b"},
+  {id:"f1", name:"Formel 1", icon:"🏎️", color:"#e10600"}
+];
+const DEF_TPLS = [
+  {id:"b", short:"B", name:"Büro", allDay:false, start:"07:30", end:"16:00", color:"#2563eb"},
+  {id:"ho", short:"HO", name:"Homeoffice", allDay:false, start:"08:00", end:"16:30", color:"#a855f7"},
+  {id:"dr", short:"DR", name:"Dienstreise", allDay:true, start:"", end:"", color:"#0ea5e9"},
+  {id:"bs", short:"BS", name:"Bereitschaft", allDay:true, start:"", end:"", color:"#f97316"},
+  {id:"u", short:"U", name:"Urlaub", allDay:true, start:"", end:"", color:"#16a34a"},
+  {id:"f", short:"F", name:"Frei", allDay:true, start:"", end:"", color:"#6b7280"}
+];
 const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 
 // ---------- Speicher ----------
 function load(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } }
 function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ toast("Speichern fehlgeschlagen"); } }
-let events = load(KEY, []);
-let opts = Object.assign({holidays:true}, load(OPT, {}));
-const persist = () => save(KEY, events);
+let events = load(K.ev, []);
+let opts = Object.assign({holidays:true, health:true, hidden:[]}, load(K.opt, {}));
+let cats = load(K.cat, null) || DEF_CATS.slice();
+let tpls = load(K.tpl, null) || DEF_TPLS.slice();
+let shifts = load(K.sh, {});
+let health = load(K.hl, {});
+if (!cats.some(c => c.id === "engie")) cats.splice(Math.min(2,cats.length), 0, {id:"engie", name:"ENGIE", icon:"⚡", color:"#00aaff"});
+// Alte Termine (v1) bekommen eine Kategorie
+events.forEach(e => { if (!e.cat) e.cat = "privat"; });
+const saveAll = () => { save(K.ev, events); save(K.opt, opts); save(K.cat, cats); save(K.tpl, tpls); save(K.sh, shifts); save(K.hl, health); };
+saveAll();
+const catOf = id => cats.find(c => c.id === id) || cats[0] || {id:"privat",name:"Privat",icon:"👤",color:"#2563eb"};
+const colorOf = e => catOf(e.cat).color;
+const tplOf = id => tpls.find(t => t.id === id);
 
-// ---------- Datum-Helfer ----------
+// ---------- Datum ----------
 const pad = n => String(n).padStart(2,"0");
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const parse = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const addDays = (d,n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
 const sameDay = (a,b) => ymd(a) === ymd(b);
 const dayDiff = (a,b) => Math.round((parse(ymd(b)) - parse(ymd(a))) / 864e5);
+const monday = d => addDays(parse(ymd(d)), -((d.getDay()+6)%7));
+function isoWeek(d){ const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const n = t.getUTCDay()||7;
+  t.setUTCDate(t.getUTCDate()+4-n); const y0 = new Date(Date.UTC(t.getUTCFullYear(),0,1)); return Math.ceil(((t-y0)/864e5+1)/7); }
 
 let today = new Date();
-let view = new Date(today.getFullYear(), today.getMonth(), 1);
 let selected = parse(ymd(today));
+let view = "month";
+let anchor = new Date(today.getFullYear(), today.getMonth(), 1); // Monatsanfang
+let agendaDays = 90;
+let painting = false, paintTpl = null;
 
 // ---------- Feiertage NRW ----------
 function easter(y){
@@ -266,17 +446,14 @@ function easter(y){
 const holCache = {};
 function holidays(y){
   if (holCache[y]) return holCache[y];
-  const e = easter(y), add = n => { const d = new Date(e); d.setDate(d.getDate()+n); return ymd(d); };
-  return holCache[y] = {
-    [`${y}-01-01`]:"Neujahr", [add(-2)]:"Karfreitag", [add(1)]:"Ostermontag", [`${y}-05-01`]:"Tag der Arbeit",
-    [add(39)]:"Christi Himmelfahrt", [add(50)]:"Pfingstmontag", [add(60)]:"Fronleichnam",
-    [`${y}-10-03`]:"Tag der Deutschen Einheit", [`${y}-11-01`]:"Allerheiligen",
-    [`${y}-12-25`]:"1. Weihnachtstag", [`${y}-12-26`]:"2. Weihnachtstag"
-  };
+  const e = easter(y), add = n => ymd(addDays(e,n));
+  return holCache[y] = {[`${y}-01-01`]:"Neujahr",[add(-2)]:"Karfreitag",[add(1)]:"Ostermontag",[`${y}-05-01`]:"Tag der Arbeit",
+    [add(39)]:"Christi Himmelfahrt",[add(50)]:"Pfingstmontag",[add(60)]:"Fronleichnam",[`${y}-10-03`]:"Tag der Deutschen Einheit",
+    [`${y}-11-01`]:"Allerheiligen",[`${y}-12-25`]:"1. Weihnachtstag",[`${y}-12-26`]:"2. Weihnachtstag"};
 }
 const holidayOf = d => opts.holidays ? holidays(d.getFullYear())[ymd(d)] : null;
 
-// ---------- Wiederholung ----------
+// ---------- Termine ----------
 function occursOn(ev, d){
   const start = parse(ev.date), diff = dayDiff(start, d);
   if (diff < 0) return false;
@@ -290,101 +467,205 @@ function occursOn(ev, d){
   }
   return false;
 }
+const visible = e => !opts.hidden.includes(e.cat);
 function eventsOn(d){
-  return events.filter(ev => occursOn(ev, d))
+  return events.filter(ev => visible(ev) && occursOn(ev, d))
     .sort((a,b) => (a.allDay?"":a.start||"").localeCompare(b.allDay?"":b.start||"") || a.title.localeCompare(b.title));
 }
+const shiftOn = d => tplOf(shifts[ymd(d)]);
+const shBadge = t => t ? `<span class="sh" style="background:${t.color}">${esc(t.short)}</span>` : "";
+const fmtK = n => n >= 10000 ? (n/1000).toFixed(0)+"k" : n >= 1000 ? (n/1000).toFixed(1).replace(".",",")+"k" : String(n);
+const fmtH = h => String(Math.round(h*10)/10).replace(".",",");
+function hMini(d, full){ const h = opts.health && health[ymd(d)]; if (!h) return "";
+  const p = []; if (h.steps != null) p.push("👣"+fmtK(h.steps)); if (full && h.sleep != null) p.push("😴"+fmtH(h.sleep)); if (full && h.hr != null) p.push("❤️"+h.hr);
+  return `<div class="hmini">${p.join(" ")}</div>`; }
+const chipTxt = e => `${e.allDay ? "" : esc(e.start||"") + " "}${esc(e.title)}`;
 
 // ---------- Render ----------
+function setTitle(){
+  let h;
+  if (view === "month") h = `${MONTHS[anchor.getMonth()]} <span>${anchor.getFullYear()}</span>`;
+  else if (view === "week"){
+    const m = monday(selected), s = addDays(m,6);
+    h = `KW ${isoWeek(m)} <span>${m.getDate()}.${m.getMonth()!==s.getMonth()?" "+MON3[m.getMonth()]:""} – ${s.getDate()}. ${MON3[s.getMonth()]}</span>`;
+  } else h = `Liste <span>ab ${selected.getDate()}. ${MON3[selected.getMonth()]}</span>`;
+  $("title").innerHTML = h;
+}
 function render(){
-  $("title").innerHTML = `${MONTHS[view.getMonth()]} <span>${view.getFullYear()}</span>`;
-  const grid = $("grid"); grid.innerHTML = "";
-  const first = new Date(view), offset = (first.getDay() + 6) % 7;
-  const start = new Date(first); start.setDate(1 - offset);
-  const weeks = Math.ceil((offset + new Date(view.getFullYear(), view.getMonth()+1, 0).getDate()) / 7);
-  for (let i = 0; i < weeks*7; i++){
-    const d = new Date(start); d.setDate(start.getDate()+i);
-    const cell = document.createElement("button");
-    cell.className = "day";
-    if (d.getMonth() !== view.getMonth()) cell.classList.add("other");
-    if (d.getDay() === 0 || d.getDay() === 6) cell.classList.add("we");
-    if (holidayOf(d)) cell.classList.add("hol");
-    if (sameDay(d, today)) cell.classList.add("today");
-    if (sameDay(d, selected)) cell.classList.add("sel");
-    const evs = eventsOn(d);
-    cell.innerHTML = `<div class="n">${d.getDate()}</div><div class="dots">${
-      evs.slice(0,3).map(e => `<i style="background:${e.color}"></i>`).join("")}</div><div class="chips">${
-      evs.slice(0,3).map(e => `<b style="background:${e.color}">${e.allDay ? "" : esc(e.start||"") + " "}${esc(e.title)}</b>`).join("")}${
-      evs.length > 3 ? `<em>+${evs.length-3} weitere</em>` : ""}</div>`;
-    cell.onclick = () => {
-      selected = d;
-      if (d.getMonth() !== view.getMonth()) view = new Date(d.getFullYear(), d.getMonth(), 1);
-      render();
-    };
-    grid.appendChild(cell);
-  }
+  document.body.classList.remove("v-month","v-week","v-agenda");
+  document.body.classList.add("v-"+view);
+  document.body.classList.toggle("painting", painting);
+  document.querySelectorAll("#seg button").forEach(b => b.classList.toggle("on", b.dataset.v === view));
+  $("btnPaint").classList.toggle("on", painting);
+  setTitle();
+  if (view === "month") renderMonth(); else if (view === "week") renderWeek(); else renderAgenda();
   renderList();
+  if (painting) renderPaintbar();
 }
-const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function onDayTap(d){
+  if (painting){ paintDay(d); return; }
+  selected = d;
+  if (view === "month" && d.getMonth() !== anchor.getMonth()) anchor = new Date(d.getFullYear(), d.getMonth(), 1);
+  render();
+}
+function renderMonth(){
+  const first = new Date(anchor), offset = (first.getDay()+6)%7, start = addDays(first, -offset);
+  const weeks = Math.ceil((offset + new Date(anchor.getFullYear(), anchor.getMonth()+1, 0).getDate())/7);
+  let html = `<div class="weekdays"><div>Mo</div><div>Di</div><div>Mi</div><div>Do</div><div>Fr</div><div>Sa</div><div>So</div></div><div class="mgrid" id="swipe">`;
+  for (let i = 0; i < weeks*7; i++){
+    const d = addDays(start, i), evs = eventsOn(d), cls = ["day"];
+    if (d.getMonth() !== anchor.getMonth()) cls.push("other");
+    if (d.getDay()===0 || d.getDay()===6) cls.push("we");
+    if (holidayOf(d)) cls.push("hol");
+    if (sameDay(d,today)) cls.push("today");
+    if (sameDay(d,selected) && !painting) cls.push("sel");
+    html += `<button class="${cls.join(" ")}" data-d="${ymd(d)}"><div class="top"><div class="n">${d.getDate()}</div>${shBadge(shiftOn(d))}</div>
+      <div class="dots">${evs.slice(0,3).map(e=>`<i style="background:${colorOf(e)}"></i>`).join("")}</div>
+      <div class="chips">${evs.slice(0,3).map(e=>`<b style="background:${colorOf(e)}">${esc(e.title)}</b>`).join("")}${evs.length>3?`<em>+${evs.length-3} weitere</em>`:""}</div>${hMini(d)}</button>`;
+  }
+  $("main").innerHTML = html + "</div>";
+  $("main").querySelectorAll(".day").forEach(b => b.onclick = () => onDayTap(parse(b.dataset.d)));
+  bindSwipe();
+}
+function renderWeek(){
+  const m = monday(selected);
+  let html = `<div class="week" id="swipe">`;
+  for (let i = 0; i < 7; i++){
+    const d = addDays(m,i), evs = eventsOn(d), hol = holidayOf(d), cls = ["wd"];
+    if (sameDay(d,today)) cls.push("today");
+    if (hol) cls.push("hol");
+    if (sameDay(d,selected) && !painting) cls.push("sel");
+    html += `<button class="${cls.join(" ")}" data-d="${ymd(d)}">
+      <div class="wh"><span class="wdn">${WD2[d.getDay()]}</span><span class="wdd">${d.getDate()}</span>${shBadge(shiftOn(d))}</div>
+      <div class="wev">${hol?`<span class="hl">${hol}</span>`:""}${evs.map(e=>`<b style="background:${colorOf(e)}">${chipTxt(e)}</b>`).join("")}${!evs.length&&!hol?`<span class="none">–</span>`:""}</div>${hMini(d,true)}</button>`;
+  }
+  $("main").innerHTML = html + "</div>";
+  $("main").querySelectorAll(".wd").forEach(b => b.onclick = () => onDayTap(parse(b.dataset.d)));
+  bindSwipe();
+}
+function evRow(e){
+  const c = catOf(e.cat);
+  return `<div class="ev" data-id="${e.id}"><div class="bar" style="background:${c.color}"></div>
+    <div class="t">${e.allDay ? "ganztägig" : esc(e.start||"") + (e.end ? "<br>" + esc(e.end) : "")}</div>
+    <div class="b"><div class="title">${esc(e.title)}</div>
+      <div class="meta">${c.icon} ${esc(c.name)}${e.loc?" · 📍 "+esc(e.loc):""}${e.repeat&&e.repeat!=="none"?" · ↻ "+REP[e.repeat]:""}</div>
+      ${e.note?`<div class="note">${esc(e.note)}</div>`:""}</div></div>`;
+}
+function shiftRow(t){
+  return t ? `<div class="shift-row" style="background:${t.color}"><span class="sh" style="background:rgba(255,255,255,.25)">${esc(t.short)}</span>
+    ${esc(t.name)} <small>${t.allDay ? "ganztägig" : esc(t.start)+" – "+esc(t.end)}</small></div>` : "";
+}
+function renderAgenda(){
+  let html = `<div class="agenda">`, count = 0;
+  for (let i = 0; i < agendaDays; i++){
+    const d = addDays(selected, i), evs = eventsOn(d), hol = holidayOf(d), t = shiftOn(d);
+    if (!evs.length && !hol && !t) continue;
+    count++;
+    const rel = dayDiff(today,d), relTxt = rel===0?"Heute":rel===1?"Morgen":WD[d.getDay()];
+    html += `<div class="ag-day"><div class="ag-head ${rel===0?"today":""}"><span>${relTxt}, ${d.getDate()}. ${MONTHS[d.getMonth()]}</span>${shBadge(t)}</div>
+      ${hol?`<div class="ev hol-row"><div class="bar" style="background:var(--holiday)"></div><div class="t">ganztägig</div><div class="b"><div class="title">${hol}</div></div></div>`:""}
+      ${evs.map(evRow).join("")}</div>`;
+  }
+  if (!count) html += `<div class="empty">In diesem Zeitraum steht nichts an.</div>`;
+  html += `<button class="more" id="more">Weitere 90 Tage laden</button></div>`;
+  $("main").innerHTML = html;
+  $("more").onclick = () => { agendaDays += 90; renderAgenda(); };
+  bindEvClicks($("main"));
+}
 function renderList(){
-  const d = selected, evs = eventsOn(d), hol = holidayOf(d);
-  const rel = dayDiff(today, d);
-  const relTxt = rel === 0 ? "Heute" : rel === 1 ? "Morgen" : rel === -1 ? "Gestern" : WD[d.getDay()];
-  let html = `<h2>${relTxt}, ${d.getDate()}. ${MONTHS[d.getMonth()]}</h2>
-    <div class="sub">${evs.length ? evs.length + (evs.length === 1 ? " Termin" : " Termine") : "Keine Termine"}</div>`;
-  if (hol) html += `<div class="ev hol-row"><div class="bar" style="background:var(--holiday)"></div><div class="t">ganztägig</div><div class="b"><div class="title">${hol}</div><div class="note">Feiertag NRW</div></div></div>`;
-  html += evs.map(e => `
-    <div class="ev" data-id="${e.id}">
-      <div class="bar" style="background:${e.color}"></div>
-      <div class="t">${e.allDay ? "ganztägig" : esc(e.start||"") + (e.end ? "<br>" + esc(e.end) : "")}</div>
-      <div class="b"><div class="title">${esc(e.title)}</div>
-        ${e.repeat && e.repeat !== "none" ? `<div class="rep">↻ ${REP[e.repeat]}</div>` : ""}
-        ${e.note ? `<div class="note">${esc(e.note)}</div>` : ""}</div>
-    </div>`).join("");
-  if (!evs.length && !hol) html += `<div class="empty">Frei! Tippe auf + für einen neuen Termin.</div>`;
+  const d = selected, evs = eventsOn(d), hol = holidayOf(d), t = shiftOn(d), rel = dayDiff(today,d);
+  const relTxt = rel===0?"Heute":rel===1?"Morgen":rel===-1?"Gestern":WD[d.getDay()];
+  let html = `<h2>${relTxt}, ${d.getDate()}. ${MONTHS[d.getMonth()]} ${d.getFullYear()!==today.getFullYear()?d.getFullYear():""}</h2>
+    <div class="sub">${evs.length ? evs.length + (evs.length===1?" Termin":" Termine") : "Keine Termine"}</div>`;
+  html += shiftRow(t);
+  if (opts.health && rel <= 0){
+    const h = health[ymd(d)];
+    html += h ? `<div class="health" id="hCard">${h.steps!=null?`<span>👣 ${h.steps.toLocaleString("de-DE")} <small>Schritte</small></span>`:""}${h.hr!=null?`<span>❤️ ${h.hr} <small>bpm Ø</small></span>`:""}${h.sleep!=null?`<span>😴 ${fmtH(h.sleep)} <small>h Schlaf</small></span>`:""}${h.q?`<span>${"★".repeat(h.q)}<small>${"☆".repeat(5-h.q)}</small></span>`:""}</div>`
+      : `<div class="health" id="hCard"><span class="add">❤️ Gesundheitsdaten eintragen</span></div>`;
+  }
+  if (hol) html += `<div class="ev hol-row"><div class="bar" style="background:var(--holiday)"></div><div class="t">ganztägig</div><div class="b"><div class="title">${hol}</div><div class="meta">Feiertag NRW</div></div></div>`;
+  html += evs.map(evRow).join("");
+  if (!evs.length && !hol && !t) html += `<div class="empty">Frei! Tippe auf + für einen Termin.</div>`;
   $("list").innerHTML = html;
-  $("list").querySelectorAll(".ev[data-id]").forEach(el => el.onclick = () => openEditor(events.find(x => x.id === el.dataset.id)));
+  if ($("hCard")) $("hCard").onclick = openHealth;
+  bindEvClicks($("list"));
 }
+function bindEvClicks(root){ root.querySelectorAll(".ev[data-id]").forEach(el => el.onclick = () => openEditor(events.find(x => x.id === el.dataset.id))); }
 
 // ---------- Navigation ----------
-const shift = n => { view = new Date(view.getFullYear(), view.getMonth()+n, 1); render(); };
+function shift(n){
+  if (view === "month"){ anchor = new Date(anchor.getFullYear(), anchor.getMonth()+n, 1);
+    if (selected.getMonth() !== anchor.getMonth() || selected.getFullYear() !== anchor.getFullYear()) selected = new Date(anchor); }
+  else if (view === "week") selected = addDays(selected, 7*n);
+  else { selected = addDays(selected, 30*n); agendaDays = 90; }
+  render();
+}
 $("btnPrev").onclick = () => shift(-1);
 $("btnNext").onclick = () => shift(1);
-$("btnToday").onclick = () => { today = new Date(); selected = parse(ymd(today)); view = new Date(today.getFullYear(), today.getMonth(), 1); render(); };
-let tx = null, ty = null;
-$("grid").addEventListener("touchstart", e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, {passive:true});
-$("grid").addEventListener("touchend", e => {
-  if (tx === null) return;
-  const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
-  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)*1.5) shift(dx < 0 ? 1 : -1);
-  tx = null;
+$("btnToday").onclick = () => { today = new Date(); selected = parse(ymd(today)); anchor = new Date(today.getFullYear(), today.getMonth(), 1); agendaDays = 90; render(); };
+$("seg").querySelectorAll("button").forEach(b => b.onclick = () => {
+  view = b.dataset.v; if (view === "month") anchor = new Date(selected.getFullYear(), selected.getMonth(), 1);
+  if (view === "agenda" && painting) togglePaint(false);
+  render();
 });
+function bindSwipe(){
+  const el = $("swipe"); if (!el) return; let tx = null, ty = null;
+  el.addEventListener("touchstart", e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, {passive:true});
+  el.addEventListener("touchend", e => { if (tx === null) return;
+    const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)*1.5) shift(dx < 0 ? 1 : -1); tx = null; });
+}
+
+// ---------- Dienst-Pinsel ----------
+function togglePaint(on){
+  painting = on ?? !painting;
+  if (painting){ if (view === "agenda") view = "month"; if (!paintTpl || (paintTpl !== "_del" && !tplOf(paintTpl))) paintTpl = tpls[0]?.id || "_del"; }
+  render();
+}
+$("btnPaint").onclick = () => togglePaint();
+$("paintDone").onclick = () => togglePaint(false);
+function renderPaintbar(){
+  $("tplBar").innerHTML = tpls.map(t => `<button class="tpl ${paintTpl===t.id?"on":""}" data-t="${t.id}">${shBadge(t)}${esc(t.name)}</button>`).join("")
+    + `<button class="tpl ${paintTpl==="_del"?"on":""}" data-t="_del">🧽 Entfernen</button>`;
+  $("tplBar").querySelectorAll(".tpl").forEach(b => b.onclick = () => { paintTpl = b.dataset.t; renderPaintbar(); });
+  // Monatszählung
+  const y = anchor.getFullYear(), m = view === "month" ? anchor.getMonth() : selected.getMonth(), cnt = {};
+  Object.entries(shifts).forEach(([k,v]) => { const d = parse(k); if (d.getFullYear()===y && d.getMonth()===m) cnt[v] = (cnt[v]||0)+1; });
+  const parts = tpls.filter(t => cnt[t.id]).map(t => `${cnt[t.id]}× ${esc(t.short)}`);
+  $("paintInfo").innerHTML = parts.length ? `${MONTHS[m]}: ${parts.join(" · ")}` : "Dienst wählen, dann Tage antippen";
+}
+function paintDay(d){
+  const k = ymd(d);
+  if (paintTpl === "_del" || shifts[k] === paintTpl) delete shifts[k]; else shifts[k] = paintTpl;
+  save(K.sh, shifts); selected = d; render();
+}
 
 // ---------- Sheets ----------
 let openSheet = null;
-function show(sheet){ openSheet = sheet; $("backdrop").classList.add("open"); sheet.classList.add("open"); }
+function show(sheet){ if (openSheet && openSheet !== sheet) openSheet.classList.remove("open"); openSheet = sheet; $("backdrop").classList.add("open"); sheet.classList.add("open"); }
 function hide(){ if (!openSheet) return; openSheet.classList.remove("open"); $("backdrop").classList.remove("open"); openSheet = null; document.activeElement && document.activeElement.blur(); }
 $("backdrop").onclick = hide;
-
-// ---------- Editor ----------
-let editing = null, color = COLORS[0];
-function paintColors(){
-  $("fColors").innerHTML = COLORS.map(c => `<button style="background:${c}" class="${c===color?"on":""}" data-c="${c}" aria-label="Farbe"></button>`).join("");
-  $("fColors").querySelectorAll("button").forEach(b => b.onclick = () => { color = b.dataset.c; paintColors(); });
+function paintColors(el, cur, set){
+  el.innerHTML = COLORS.map(c => `<button style="background:${c}" class="${c===cur?"on":""}" data-c="${c}" aria-label="Farbe"></button>`).join("");
+  el.querySelectorAll("button").forEach(b => b.onclick = () => { set(b.dataset.c); paintColors(el, b.dataset.c, set); });
 }
-function toggleTime(){ document.querySelectorAll(".timeRow").forEach(r => r.style.display = $("fAllDay").checked ? "none" : ""); }
+
+// ---------- Termin-Editor ----------
+let editing = null, evCat = "privat";
+function paintCats(){
+  $("fCats").innerHTML = cats.map(c => `<button data-c="${c.id}" class="${c.id===evCat?"on":""}" style="--cc:${c.color};${c.id===evCat?`background:${c.color};color:#fff`:""}">${c.icon} ${esc(c.name)}</button>`).join("");
+  $("fCats").querySelectorAll("button").forEach(b => b.onclick = () => { evCat = b.dataset.c; paintCats(); });
+}
+const toggleTime = () => document.querySelectorAll(".timeRow").forEach(r => r.style.display = $("fAllDay").checked ? "none" : "");
 $("fAllDay").onchange = toggleTime;
-$("fStart").onchange = () => {
-  const s = $("fStart").value; if (!s) return;
-  const [h,m] = s.split(":").map(Number), e = $("fEnd").value;
-  if (!e || e <= s) $("fEnd").value = `${pad(Math.min(h+1,23))}:${pad(m)}`;
-};
+$("fStart").onchange = () => { const s = $("fStart").value; if (!s) return; const [h,m] = s.split(":").map(Number), e = $("fEnd").value;
+  if (!e || e <= s) $("fEnd").value = `${pad(Math.min(h+1,23))}:${pad(m)}`; };
 function openEditor(ev){
   editing = ev || null;
   $("evHeading").textContent = ev ? "Termin bearbeiten" : "Neuer Termin";
   $("evDelete").style.display = ev ? "" : "none";
-  const now = new Date(), nh = Math.min(now.getHours()+1, 23);
-  $("fTitle").value = ev ? ev.title : "";
+  const nh = Math.min(new Date().getHours()+1, 23);
+  $("fTitle").value = ev ? ev.title : ""; $("fLoc").value = ev ? (ev.loc||"") : "";
   $("fDate").value = ev ? ev.date : ymd(selected);
   $("fAllDay").checked = ev ? !!ev.allDay : false;
   $("fStart").value = ev ? (ev.start||"") : `${pad(nh)}:00`;
@@ -392,8 +673,8 @@ function openEditor(ev){
   $("fRepeat").value = ev ? (ev.repeat||"none") : "none";
   $("fRemind").value = ev && ev.remind != null ? String(ev.remind) : "";
   $("fNote").value = ev ? (ev.note||"") : "";
-  color = ev ? ev.color : COLORS[0];
-  paintColors(); toggleTime(); show($("evSheet"));
+  evCat = ev ? ev.cat : (cats.find(c => !opts.hidden.includes(c.id)) || cats[0]).id;
+  paintCats(); toggleTime(); show($("evSheet"));
   if (!ev) setTimeout(() => $("fTitle").focus(), 300);
 }
 $("fab").onclick = () => openEditor(null);
@@ -404,30 +685,139 @@ $("evSave").onclick = () => {
   if (!$("fDate").value){ toast("Bitte ein Datum wählen"); return; }
   const allDay = $("fAllDay").checked;
   if (!allDay && $("fEnd").value && $("fStart").value && $("fEnd").value < $("fStart").value){ toast("Ende liegt vor dem Beginn"); return; }
-  const data = { title, date: $("fDate").value, allDay,
-    start: allDay ? "" : $("fStart").value, end: allDay ? "" : $("fEnd").value,
-    repeat: $("fRepeat").value, remind: $("fRemind").value === "" ? null : Number($("fRemind").value),
-    note: $("fNote").value.trim(), color };
-  if (editing) Object.assign(editing, data);
-  else events.push(Object.assign({ id: Date.now().toString(36) + Math.random().toString(36).slice(2,7) }, data));
-  persist();
-  selected = parse(data.date); view = new Date(selected.getFullYear(), selected.getMonth(), 1);
-  hide(); render(); toast(editing ? "Termin aktualisiert" : "Termin gespeichert");
+  const data = {title, loc:$("fLoc").value.trim(), date:$("fDate").value, allDay, start: allDay?"":$("fStart").value, end: allDay?"":$("fEnd").value,
+    repeat:$("fRepeat").value, remind: $("fRemind").value===""?null:Number($("fRemind").value), note:$("fNote").value.trim(), cat:evCat};
+  if (editing) Object.assign(editing, data); else events.push(Object.assign({id:uid()}, data));
+  if (opts.hidden.includes(evCat)){ opts.hidden = opts.hidden.filter(x => x !== evCat); save(K.opt, opts); }
+  save(K.ev, events);
+  selected = parse(data.date); anchor = new Date(selected.getFullYear(), selected.getMonth(), 1);
+  const was = editing; hide(); render(); toast(was ? "Termin aktualisiert" : "Termin gespeichert");
 };
 $("evDelete").onclick = () => {
   if (!editing) return;
-  const ok = editing.repeat && editing.repeat !== "none"
-    ? confirm("Das ist ein Serientermin. Alle Wiederholungen löschen?")
-    : confirm("Termin wirklich löschen?");
-  if (!ok) return;
-  events = events.filter(e => e !== editing); persist(); hide(); render(); toast("Termin gelöscht");
+  if (!confirm(editing.repeat && editing.repeat!=="none" ? "Serientermin – alle Wiederholungen löschen?" : "Termin wirklich löschen?")) return;
+  events = events.filter(e => e !== editing); save(K.ev, events); hide(); render(); toast("Termin gelöscht");
 };
 
-// ---------- Menü / Backup ----------
-$("btnMenu").onclick = () => { $("optHol").checked = opts.holidays; show($("menuSheet")); };
+// ---------- Einstellungen ----------
+function renderMenu(){
+  $("optHol").checked = opts.holidays; $("optHealth").checked = opts.health;
+  $("catList").innerHTML = cats.map(c => {
+    const n = events.filter(e => e.cat === c.id).length;
+    return `<div class="row"><button class="lbl" data-edit="${c.id}"><span style="color:${c.color};font-size:20px">●</span>${c.icon} ${esc(c.name)} <small>${n}</small></button>
+      <label class="switch"><input type="checkbox" data-vis="${c.id}" ${opts.hidden.includes(c.id)?"":"checked"}><span></span></label></div>`;
+  }).join("") + `<button class="menu-btn add-btn" id="addCat">+ Kategorie hinzufügen</button>`;
+  $("catList").querySelectorAll("[data-vis]").forEach(i => i.onchange = () => {
+    opts.hidden = i.checked ? opts.hidden.filter(x => x !== i.dataset.vis) : [...opts.hidden, i.dataset.vis];
+    save(K.opt, opts); render(); });
+  $("catList").querySelectorAll("[data-edit]").forEach(b => b.onclick = () => openCat(cats.find(c => c.id === b.dataset.edit)));
+  $("addCat").onclick = () => openCat(null);
+  $("tplList").innerHTML = tpls.map(t => `<div class="row"><button class="lbl" data-t="${t.id}">${shBadge(t)} ${esc(t.name)} <small>${t.allDay?"ganztägig":esc(t.start)+"–"+esc(t.end)}</small></button><span style="color:var(--muted)">›</span></div>`).join("")
+    + `<button class="menu-btn add-btn" id="addTpl">+ Dienst hinzufügen</button>`;
+  $("tplList").querySelectorAll("[data-t]").forEach(b => b.onclick = () => openTpl(tplOf(b.dataset.t)));
+  $("addTpl").onclick = () => openTpl(null);
+}
+$("btnMenu").onclick = () => { renderMenu(); show($("menuSheet")); };
 $("menuClose").onclick = hide;
-$("optHol").onchange = () => { opts.holidays = $("optHol").checked; save(OPT, opts); render(); };
+$("optHealth").onchange = () => { opts.health = $("optHealth").checked; save(K.opt, opts); render(); };
+$("optHol").onchange = () => { opts.holidays = $("optHol").checked; save(K.opt, opts); render(); };
+const backToMenu = () => { renderMenu(); show($("menuSheet")); };
 
+let editCat = null, catColor = COLORS[0];
+function openCat(c){
+  editCat = c; $("catHeading").textContent = c ? "Kategorie bearbeiten" : "Neue Kategorie";
+  $("cName").value = c ? c.name : ""; $("cIcon").value = c ? c.icon : "";
+  catColor = c ? c.color : COLORS[(cats.length) % COLORS.length];
+  paintColors($("cColors"), catColor, v => catColor = v);
+  $("catDelete").style.display = c && cats.length > 1 ? "" : "none";
+  show($("catSheet"));
+}
+$("catCancel").onclick = backToMenu;
+$("catSave").onclick = () => {
+  const name = $("cName").value.trim(); if (!name){ toast("Bitte einen Namen eingeben"); return; }
+  const data = {name, icon: $("cIcon").value.trim() || "•", color: catColor};
+  if (editCat) Object.assign(editCat, data); else cats.push(Object.assign({id:uid()}, data));
+  save(K.cat, cats); render(); backToMenu();
+};
+$("catDelete").onclick = () => {
+  if (!editCat) return; const n = events.filter(e => e.cat === editCat.id).length, rest = cats.filter(c => c !== editCat);
+  if (!confirm(n ? `${n} Termine dieser Kategorie werden ebenfalls gelöscht. Fortfahren?` : "Kategorie löschen?")) return;
+  events = events.filter(e => e.cat !== editCat.id); cats = rest; opts.hidden = opts.hidden.filter(x => x !== editCat.id);
+  saveAll(); render(); backToMenu();
+};
+
+let editTpl = null, tplColor = COLORS[0];
+const toggleTTime = () => document.querySelectorAll(".tTime").forEach(r => r.style.display = $("tAllDay").checked ? "none" : "");
+$("tAllDay").onchange = toggleTTime;
+function openTpl(t){
+  editTpl = t; $("tplHeading").textContent = t ? "Dienst bearbeiten" : "Neuer Dienst";
+  $("tName").value = t ? t.name : ""; $("tShort").value = t ? t.short : "";
+  $("tAllDay").checked = t ? t.allDay : false; $("tStart").value = t ? t.start : "08:00"; $("tEnd").value = t ? t.end : "16:30";
+  tplColor = t ? t.color : COLORS[tpls.length % COLORS.length];
+  paintColors($("tColors"), tplColor, v => tplColor = v);
+  $("tplDelete").style.display = t ? "" : "none"; toggleTTime(); show($("tplSheet"));
+}
+$("tplCancel").onclick = backToMenu;
+$("tplSave").onclick = () => {
+  const name = $("tName").value.trim(), short = $("tShort").value.trim().toUpperCase();
+  if (!name || !short){ toast("Name und Kürzel ausfüllen"); return; }
+  const allDay = $("tAllDay").checked;
+  const data = {name, short, allDay, start: allDay?"":$("tStart").value, end: allDay?"":$("tEnd").value, color: tplColor};
+  if (editTpl) Object.assign(editTpl, data); else tpls.push(Object.assign({id:uid()}, data));
+  save(K.tpl, tpls); render(); backToMenu();
+};
+$("tplDelete").onclick = () => {
+  if (!editTpl) return; const n = Object.values(shifts).filter(v => v === editTpl.id).length;
+  if (!confirm(n ? `Dieser Dienst ist an ${n} Tagen eingetragen. Trotzdem löschen?` : "Dienst löschen?")) return;
+  Object.keys(shifts).forEach(k => { if (shifts[k] === editTpl.id) delete shifts[k]; });
+  tpls = tpls.filter(t => t !== editTpl); saveAll(); render(); backToMenu();
+};
+
+// ---------- Gesundheit ----------
+let hQ = 0;
+const num = v => { v = String(v||"").trim().replace(/\./g,"").replace(",","."); if (v === "") return null; const n = Number(v); return isFinite(n) ? n : null; };
+const dec = v => { v = String(v||"").trim().replace(",","."); if (v === "") return null; const n = Number(v); return isFinite(n) ? n : null; };
+function paintStars(){ $("hStars").innerHTML = [1,2,3,4,5].map(i => `<button class="${i<=hQ?"on":""}" data-q="${i}">★</button>`).join("");
+  $("hStars").querySelectorAll("button").forEach(b => b.onclick = () => { hQ = Number(b.dataset.q) === hQ ? 0 : Number(b.dataset.q); paintStars(); }); }
+function openHealth(){
+  const h = health[ymd(selected)] || {};
+  $("hHeading").textContent = `${selected.getDate()}. ${MON3[selected.getMonth()]}`;
+  $("hSteps").value = h.steps ?? ""; $("hHr").value = h.hr ?? ""; $("hSleep").value = h.sleep != null ? fmtH(h.sleep) : "";
+  hQ = h.q || 0; paintStars(); $("hDelete").style.display = health[ymd(selected)] ? "" : "none"; show($("hSheet"));
+}
+$("hCancel").onclick = hide;
+$("hSave").onclick = () => {
+  const r = {steps: num($("hSteps").value), hr: num($("hHr").value), sleep: dec($("hSleep").value), q: hQ || null};
+  Object.keys(r).forEach(k => r[k] == null && delete r[k]);
+  if (Object.keys(r).length) health[ymd(selected)] = r; else delete health[ymd(selected)];
+  save(K.hl, health); hide(); render(); toast("Gesundheitsdaten gespeichert");
+};
+$("hDelete").onclick = () => { delete health[ymd(selected)]; save(K.hl, health); hide(); render(); };
+// Format vom Kurzbefehl, eine Zeile je Tag:  KALH;2026-11-24;8432;68;7,5   (optional ;Qualität 1-5)
+function parseHealth(text){
+  let n = 0;
+  String(text).split(/\r?\n/).forEach(line => {
+    const p = line.trim().split(";"); if (p[0] !== "KALH" || !/^\d{4}-\d{2}-\d{2}$/.test(p[1]||"")) return;
+    const old = health[p[1]] || {}, r = Object.assign({}, old);
+    const st = num(p[2]), hr = dec(p[3]), sl = dec(p[4]), q = num(p[5]);
+    if (st != null) r.steps = Math.round(st); if (hr != null) r.hr = Math.round(hr);
+    if (sl != null) r.sleep = sl > 24 ? Math.round(sl/6)/10 : Math.round(sl*10)/10; // Minuten → Stunden
+    if (q >= 1 && q <= 5) r.q = q;
+    health[p[1]] = r; n++;
+  });
+  return n;
+}
+async function pasteHealth(){
+  try{
+    const txt = await navigator.clipboard.readText(), n = parseHealth(txt);
+    if (!n){ toast("Keine Gesundheitsdaten in der Zwischenablage"); return; }
+    save(K.hl, health); hide(); render(); toast(`Gesundheitsdaten für ${n} Tag${n>1?"e":""} übernommen`);
+  }catch(e){ toast("Einfügen nicht erlaubt – bitte erneut tippen"); }
+}
+$("hPaste").onclick = pasteHealth;
+$("mPasteHealth").onclick = pasteHealth;
+
+// ---------- Import / Export ----------
 async function deliver(name, text, type){
   const file = new File([text], name, {type});
   if (navigator.canShare && navigator.canShare({files:[file]})){
@@ -437,54 +827,56 @@ async function deliver(name, text, type){
   document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
 $("mExportJson").onclick = () => deliver(`kalender-backup-${ymd(new Date())}.json`,
-  JSON.stringify({app:"kalender", version:1, exported:new Date().toISOString(), events}, null, 2), "application/json");
+  JSON.stringify({app:"kalender", version:2, exported:new Date().toISOString(), categories:cats, templates:tpls, shifts, health, events}, null, 1), "application/json");
 $("mImportJson").onclick = () => $("importFile").click();
 $("importFile").onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
   try{
-    const data = JSON.parse(await f.text()), list = Array.isArray(data) ? data : data.events;
-    if (!Array.isArray(list)) throw 0;
+    const data = JSON.parse(await f.text()), list = Array.isArray(data) ? data : (data.events || []);
     const valid = list.filter(x => x && x.id && x.title && /^\d{4}-\d{2}-\d{2}$/.test(x.date));
-    if (!confirm(`${valid.length} Termine gefunden. Mit vorhandenen Terminen zusammenführen?`)) return;
-    const ids = new Set(events.map(x => x.id));
-    valid.forEach(x => { if (!ids.has(x.id)) events.push(x); });
-    persist(); render(); hide(); toast(`${valid.length} Termine importiert`);
+    const nShift = data.shifts ? Object.keys(data.shifts).length : 0;
+    if (!valid.length && !nShift && !data.health) throw 0;
+    if (!confirm(`${valid.length} Termine${nShift?` und ${nShift} Dienste`:""} gefunden. Importieren? Vorhandene gleiche Termine werden aktualisiert.`)) return;
+    (data.categories||[]).forEach(c => { if (c && c.id && !cats.some(x => x.id === c.id)) cats.push(c); });
+    (data.templates||[]).forEach(t => { if (t && t.id && !tpls.some(x => x.id === t.id)) tpls.push(t); });
+    if (data.shifts) Object.assign(shifts, data.shifts);
+    if (data.health) Object.assign(health, data.health);
+    let neu = 0, upd = 0;
+    valid.forEach(x => { if (!x.cat || !cats.some(c => c.id === x.cat)) x.cat = "privat";
+      const i = events.findIndex(y => y.id === x.id); if (i >= 0){ events[i] = x; upd++; } else { events.push(x); neu++; } });
+    if (!cats.some(c => c.id === "privat")) cats.unshift(DEF_CATS[0]);
+    saveAll(); render(); hide(); toast(`${neu} neu, ${upd} aktualisiert`);
   }catch(err){ toast("Datei konnte nicht gelesen werden"); }
   e.target.value = "";
 };
 $("mExportIcs").onclick = () => {
-  const esc2 = s => String(s).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
+  const e2 = s => String(s).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
   const rr = {daily:"FREQ=DAILY",weekly:"FREQ=WEEKLY",biweekly:"FREQ=WEEKLY;INTERVAL=2",monthly:"FREQ=MONTHLY",yearly:"FREQ=YEARLY"};
   const stamp = new Date().toISOString().replace(/[-:]/g,"").split(".")[0] + "Z";
   const L = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Kalender WebApp//DE","CALSCALE:GREGORIAN"];
+  const vevent = (id, title, date, allDay, start, end, extra) => {
+    const d = date.replace(/-/g,"");
+    L.push("BEGIN:VEVENT", `UID:${id}@kalender-webapp`, `DTSTAMP:${stamp}`, `SUMMARY:${e2(title)}`);
+    if (allDay || !start){ L.push(`DTSTART;VALUE=DATE:${d}`, `DTEND;VALUE=DATE:${ymd(addDays(parse(date),1)).replace(/-/g,"")}`); }
+    else L.push(`DTSTART;TZID=Europe/Berlin:${d}T${start.replace(":","")}00`, `DTEND;TZID=Europe/Berlin:${d}T${(end||start).replace(":","")}00`);
+    extra.forEach(x => L.push(x)); L.push("END:VEVENT");
+  };
   events.forEach(e => {
-    const d = e.date.replace(/-/g,"");
-    L.push("BEGIN:VEVENT", `UID:${e.id}@kalender-webapp`, `DTSTAMP:${stamp}`, `SUMMARY:${esc2(e.title)}`);
-    if (e.allDay || !e.start){
-      const n = parse(e.date); n.setDate(n.getDate()+1);
-      L.push(`DTSTART;VALUE=DATE:${d}`, `DTEND;VALUE=DATE:${ymd(n).replace(/-/g,"")}`);
-    } else {
-      L.push(`DTSTART;TZID=Europe/Berlin:${d}T${e.start.replace(":","")}00`,
-             `DTEND;TZID=Europe/Berlin:${d}T${(e.end||e.start).replace(":","")}00`);
-    }
-    if (rr[e.repeat]) L.push(`RRULE:${rr[e.repeat]}`);
-    if (e.note) L.push(`DESCRIPTION:${esc2(e.note)}`);
-    if (e.remind != null) L.push("BEGIN:VALARM","ACTION:DISPLAY",`DESCRIPTION:${esc2(e.title)}`,`TRIGGER:-PT${e.remind}M`,"END:VALARM");
-    L.push("END:VEVENT");
+    const x = []; if (rr[e.repeat]) x.push(`RRULE:${rr[e.repeat]}`); if (e.note) x.push(`DESCRIPTION:${e2(e.note)}`);
+    if (e.loc) x.push(`LOCATION:${e2(e.loc)}`); x.push(`CATEGORIES:${e2(catOf(e.cat).name)}`);
+    if (e.remind != null) x.push("BEGIN:VALARM","ACTION:DISPLAY",`DESCRIPTION:${e2(e.title)}`,`TRIGGER:-PT${e.remind}M`,"END:VALARM");
+    vevent(e.id, e.title, e.date, e.allDay, e.start, e.end, x);
   });
+  Object.entries(shifts).forEach(([k,v]) => { const t = tplOf(v); if (t) vevent("shift-"+k, t.name, k, t.allDay, t.start, t.end, ["CATEGORIES:Dienst"]); });
   L.push("END:VCALENDAR");
   deliver(`kalender-${ymd(new Date())}.ics`, L.join("\r\n"), "text/calendar");
 };
 
 // ---------- Toast ----------
 let tt;
-function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), 1900); }
+function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), 2000); }
 
-// Tag wechselt (App bleibt offen über Mitternacht)
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden && !sameDay(today, new Date())){ today = new Date(); render(); }
-});
-
+document.addEventListener("visibilitychange", () => { if (!document.hidden && !sameDay(today, new Date())){ today = new Date(); render(); } });
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 render();
 })();
