@@ -384,6 +384,16 @@ body.list-open #fab{opacity:0;pointer-events:none}
   body.list-open #fab{opacity:1;pointer-events:auto}
   #list h2{padding-right:0}
 }
+
+/* ===== Zugeklappt: Leiste in den rechten Randstreifen (Safe-Area) ===== */
+:root{--sir:env(safe-area-inset-right, 0px)}
+body.rail-inset{padding-right:var(--sir) !important}
+body.rail-inset #rail{right:calc((var(--sir) - 48px) / 2);top:auto;bottom:calc(14px + var(--safe-bot));justify-content:flex-end;gap:10px;width:48px}
+body.rail-inset .rg{box-shadow:none}
+body.rail-inset .rg button{width:40px;height:40px}
+body.rail-inset #fab{right:calc(var(--sir) + 14px)}
+body.rail-inset #list{right:var(--sir)}
+body.rail-inset #paintbar{right:var(--sir)}
 </style>
 </head>
 <body class="v-month">
@@ -1268,7 +1278,7 @@ let tt;
 function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), 2000); }
 
 document.addEventListener("visibilitychange", () => { if (document.hidden) return; if (!sameDay(today, new Date())){ today = new Date(); render(); } autoSync(); });
-const APP_VERSION = "1.14 · 24.11.2026";
+const APP_VERSION = "1.15 · 24.11.2026";
 if ("serviceWorker" in navigator && location.protocol === "https:"){
   navigator.serviceWorker.register("sw.js", {updateViaCache: "none"}).then(reg => {
     reg.update();
@@ -1285,6 +1295,13 @@ async function forceUpdate(){
   }catch(e){}
   location.replace(location.pathname + "?v=" + Date.now());
 }
+// Rechter System-Randstreifen (z. B. iPhone Duo zugeklappt): Leiste dort hinein verschieben
+function placeRail(){
+  const pr = document.createElement("div"); pr.style.cssText = "position:fixed;visibility:hidden;padding-right:var(--sir)";
+  document.body.appendChild(pr); const sir = parseFloat(getComputedStyle(pr).paddingRight) || 0; pr.remove();
+  document.body.classList.toggle("rail-inset", sir >= 52);
+}
+placeRail(); window.addEventListener("resize", placeRail); window.addEventListener("orientationchange", () => setTimeout(placeRail, 300));
 render();
 autoSync();
 })();
