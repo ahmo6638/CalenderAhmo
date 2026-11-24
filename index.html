@@ -319,6 +319,32 @@ header{padding-top:14px;padding-bottom:8px}
 @media (min-width:560px) and (min-height:521px){ #paintbar{transform:translateX(calc(-50% - var(--rail)/2))} }
 .bub.img{background-color:#fff;background-size:cover;background-position:center;color:transparent;font-size:0}
 .mini{display:inline-block;width:16px;height:16px;border-radius:50%;background:#fff center/cover;vertical-align:-3px}
+
+/* ===== Monat scrollt vertikal ===== */
+body.v-month #cal{flex:1 1 auto;min-height:0}
+body.v-month #list{flex:0 0 auto;height:34vh;height:34dvh}
+body.v-month #main{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+body.v-month .weekdays{flex:none;border-bottom:1px solid var(--line)}
+.mscroll{flex:1;min-height:0;overflow-y:auto;position:relative;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:20px}
+.mblock{padding-bottom:6px}
+.mtitle{font-size:17px;font-weight:700;padding:14px 12px 6px}
+.mtitle span{color:var(--muted);font-weight:500}
+.mscroll .mgrid{flex:none !important;grid-auto-rows:auto !important;min-height:0 !important}
+.day.blank{border-top:0;background:none;pointer-events:none}
+.day{transition:background-color .18s ease}
+.week,.agenda{animation:fadeIn .22s ease}
+#main{animation:none}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (min-width:560px){ .mtitle{font-size:20px;padding:14px 16px 8px} }
+@media (min-width:760px) and (min-aspect-ratio:5/4){
+  body.v-month #list{height:auto}
+  .mscroll .day{min-height:86px}
+}
+@media (min-width:560px) and (max-height:520px){
+  body.v-month #list{height:auto}
+  .mscroll .day{min-height:60px}
+  .mtitle{font-size:14px;padding:6px 10px 3px}
+}
 </style>
 </head>
 <body class="v-month">
@@ -635,32 +661,91 @@ function render(){
   if (view === "month") renderMonth(); else if (view === "week") renderWeek(); else renderAgenda();
   renderList();
   if (painting) renderPaintbar();
+  if (view === "month") markSel();
 }
 function onDayTap(d){
   if (painting){ paintDay(d); return; }
   selected = d;
-  if (view === "month" && d.getMonth() !== anchor.getMonth()) anchor = new Date(d.getFullYear(), d.getMonth(), 1);
+  if (view === "month"){ markSel(); renderList(); return; }
   render();
 }
+// ---------- Monat: durchgehend scrollbar ----------
+const addMonths = (d, n) => new Date(d.getFullYear(), d.getMonth() + n, 1);
+const mKey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}`;
+let mRange = null, scrollTarget = null, scrollLock = false;
+function dayCell(d, kw){
+  const evs = eventsOn(d), cls = ["day"];
+  if (d.getDay()===0 || d.getDay()===6) cls.push("we");
+  if (holidayOf(d)) cls.push("hol");
+  if (sameDay(d,today)) cls.push("today");
+  if (sameDay(d,selected) && !painting) cls.push("sel");
+  const bs = dayBubbles(d, evs), texts = evs.filter(e => !catOf(e.cat).bubble);
+  const bhtml = bs.length === 0 ? "" : bs.length === 1 ? bub(bs[0], true) : `<div class="cluster n${Math.min(bs.length,4)}">${bs.slice(0,4).map(b => bub(b,false)).join("")}</div>`;
+  return `<button class="${cls.join(" ")}" data-d="${ymd(d)}"><div class="top">${kw?`<span class="kw">${isoWeek(d)}</span>`:""}<div class="n">${d.getDate()}</div></div>
+    <div class="bubs">${bhtml}</div>${texts.slice(0,2).map(e => `<div class="tl">${esc(e.title)}</div>`).join("")}${texts.length>2?`<div class="tl">+${texts.length-2}</div>`:""}${hMini(d)}</button>`;
+}
+function monthHTML(m0){
+  const offset = (m0.getDay()+6)%7, n = new Date(m0.getFullYear(), m0.getMonth()+1, 0).getDate();
+  let h = `<section class="mblock" data-m="${mKey(m0)}"><div class="mtitle">${MONTHS[m0.getMonth()]} <span>${m0.getFullYear()}</span></div><div class="mgrid">`;
+  for (let i = 0; i < offset; i++) h += `<div class="day blank"></div>`;
+  for (let k = 1; k <= n; k++){ const d = new Date(m0.getFullYear(), m0.getMonth(), k); h += dayCell(d, k === 1 || d.getDay() === 1); }
+  return h + `</div></section>`;
+}
+function monthsHTML(from, to){ let h = ""; for (let m = new Date(from); m <= to; m = addMonths(m,1)) h += monthHTML(m); return h; }
 function renderMonth(){
-  const first = new Date(anchor), offset = (first.getDay()+6)%7, start = addDays(first, -offset);
-  const weeks = Math.ceil((offset + new Date(anchor.getFullYear(), anchor.getMonth()+1, 0).getDate())/7);
-  let html = `<div class="weekdays"><div>M</div><div>D</div><div>M</div><div>D</div><div>F</div><div>S</div><div>S</div></div><div class="mgrid" id="swipe">`;
-  for (let i = 0; i < weeks*7; i++){
-    const d = addDays(start, i), evs = eventsOn(d), cls = ["day"];
-    if (d.getMonth() !== anchor.getMonth()) cls.push("other");
-    if (d.getDay()===0 || d.getDay()===6) cls.push("we");
-    if (holidayOf(d)) cls.push("hol");
-    if (sameDay(d,today)) cls.push("today");
-    if (sameDay(d,selected) && !painting) cls.push("sel");
-    const bs = dayBubbles(d, evs), texts = evs.filter(e => !catOf(e.cat).bubble);
-    const bhtml = bs.length === 0 ? "" : bs.length === 1 ? bub(bs[0], true) : `<div class="cluster n${Math.min(bs.length,4)}">${bs.slice(0,4).map(b => bub(b,false)).join("")}</div>`;
-    html += `<button class="${cls.join(" ")}" data-d="${ymd(d)}"><div class="top">${i%7===0?`<span class="kw">${isoWeek(d)}</span>`:""}<div class="n">${d.getDate()}</div></div>
-      <div class="bubs">${bhtml}</div>${texts.slice(0,2).map(e => `<div class="tl">${esc(e.title)}</div>`).join("")}${texts.length>2?`<div class="tl">+${texts.length-2}</div>`:""}${hMini(d)}</button>`;
+  let sc = $("mscroll");
+  const inRange = mRange && anchor >= mRange.from && anchor <= mRange.to;
+  if (!sc || !inRange){
+    mRange = {from: addMonths(anchor,-12), to: addMonths(anchor,12)};
+    $("main").innerHTML = `<div class="weekdays"><div>M</div><div>D</div><div>M</div><div>D</div><div>F</div><div>S</div><div>S</div></div><div class="mscroll" id="mscroll"></div>`;
+    sc = $("mscroll"); sc.innerHTML = monthsHTML(mRange.from, mRange.to);
+    sc.onclick = e => { const b = e.target.closest(".day[data-d]"); if (b) onDayTap(parse(b.dataset.d)); };
+    sc.onscroll = onMonthScroll;
+    if (!scrollTarget) scrollTarget = {m: anchor, smooth: false};
+  } else {
+    const top = sc.scrollTop; sc.innerHTML = monthsHTML(mRange.from, mRange.to); sc.scrollTop = top;
   }
-  $("main").innerHTML = html + "</div>";
-  $("main").querySelectorAll(".day").forEach(b => b.onclick = () => onDayTap(parse(b.dataset.d)));
-  bindSwipe();
+  if (scrollTarget){ const t = scrollTarget; scrollTarget = null; requestAnimationFrame(() => scrollToMonth(t.m, t.smooth)); }
+}
+function scrollToMonth(m, smooth){
+  const sc = $("mscroll"); if (!sc) return;
+  const el = sc.querySelector(`[data-m="${mKey(m)}"]`); if (!el) return;
+  scrollLock = smooth; anchor = new Date(m.getFullYear(), m.getMonth(), 1); setTitle();
+  sc.scrollTo({top: el.offsetTop, behavior: smooth ? "smooth" : "auto"});
+  if (smooth) setTimeout(() => { scrollLock = false; }, 600);
+}
+let scrollRaf = 0;
+function onMonthScroll(){
+  if (scrollRaf) return;
+  scrollRaf = requestAnimationFrame(() => {
+    scrollRaf = 0; const sc = $("mscroll"); if (!sc) return;
+    // Titel nach sichtbarem Monat
+    if (!scrollLock){
+      let cur = null;
+      const probe = sc.scrollTop + sc.clientHeight * 0.3;
+      for (const b of sc.children){ if (b.offsetTop <= probe) cur = b; else break; }
+      if (cur){ const [y,m] = cur.dataset.m.split("-").map(Number); const a = new Date(y, m-1, 1);
+        if (a.getTime() !== anchor.getTime()){ anchor = a; setTitle(); if (painting) renderPaintbar(); } }
+    }
+    // Nachladen oben/unten
+    if (sc.scrollTop < 400){
+      const from = addMonths(mRange.from, -6), h0 = sc.scrollHeight;
+      sc.insertAdjacentHTML("afterbegin", monthsHTML(from, addMonths(mRange.from, -1))); mRange.from = from;
+      sc.scrollTop += sc.scrollHeight - h0;
+    } else if (sc.scrollTop + sc.clientHeight > sc.scrollHeight - 400){
+      const to = addMonths(mRange.to, 6);
+      sc.insertAdjacentHTML("beforeend", monthsHTML(addMonths(mRange.to, 1), to)); mRange.to = to;
+    }
+  });
+}
+function markSel(){
+  document.querySelectorAll("#mscroll .day.sel").forEach(b => b.classList.remove("sel"));
+  if (painting) return;
+  const b = document.querySelector(`#mscroll .day[data-d="${ymd(selected)}"]`); if (b) b.classList.add("sel");
+}
+function refreshCell(d){
+  const b = document.querySelector(`#mscroll .day[data-d="${ymd(d)}"]`); if (!b) return false;
+  const kw = !!b.querySelector(".kw"); b.outerHTML = dayCell(d, kw); return true;
 }
 function renderWeek(){
   const m = monday(selected);
@@ -729,17 +814,21 @@ function bindEvClicks(root){ root.querySelectorAll(".ev[data-id]").forEach(el =>
 
 // ---------- Navigation ----------
 function shift(n){
-  if (view === "month"){ anchor = new Date(anchor.getFullYear(), anchor.getMonth()+n, 1);
-    if (selected.getMonth() !== anchor.getMonth() || selected.getFullYear() !== anchor.getFullYear()) selected = new Date(anchor); }
+  if (view === "month"){ const t = addMonths(anchor, n);
+    if (!mRange || t < mRange.from || t > mRange.to){ anchor = t; scrollTarget = {m: t, smooth: false}; render(); return; }
+    scrollToMonth(t, true); return; }
   else if (view === "week") selected = addDays(selected, 7*n);
   else { selected = addDays(selected, 30*n); agendaDays = 90; }
   render();
 }
 $("btnPrev").onclick = () => shift(-1);
 $("btnNext").onclick = () => shift(1);
-$("btnToday").onclick = () => { today = new Date(); selected = parse(ymd(today)); anchor = new Date(today.getFullYear(), today.getMonth(), 1); agendaDays = 90; render(); };
+$("btnToday").onclick = () => { today = new Date(); selected = parse(ymd(today)); agendaDays = 90;
+  const t = new Date(today.getFullYear(), today.getMonth(), 1);
+  if (view === "month" && mRange && t >= mRange.from && t <= mRange.to){ markSel(); renderList(); scrollToMonth(t, true); return; }
+  anchor = t; scrollTarget = {m: t, smooth: false}; render(); };
 $("seg").querySelectorAll("button").forEach(b => b.onclick = () => {
-  view = b.dataset.v; if (view === "month") anchor = new Date(selected.getFullYear(), selected.getMonth(), 1);
+  view = b.dataset.v; if (view === "month"){ anchor = new Date(selected.getFullYear(), selected.getMonth(), 1); scrollTarget = {m: anchor, smooth: false}; }
   if (view === "agenda" && painting) togglePaint(false);
   render();
 });
@@ -781,7 +870,9 @@ function renderPaintbar(){
 function paintDay(d){
   const k = ymd(d);
   if (paintTpl === "_del" || shifts[k] === paintTpl) delete shifts[k]; else shifts[k] = paintTpl;
-  save(K.sh, shifts); selected = d; render();
+  save(K.sh, shifts); selected = d;
+  if (view === "month" && refreshCell(d)){ renderList(); renderPaintbar(); return; }
+  render();
 }
 
 // ---------- Sheets ----------
