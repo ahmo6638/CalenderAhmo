@@ -236,6 +236,60 @@ body.v-week #cal{flex:none}
   .grab{display:none}
   #paintbar{left:50%;right:auto;width:min(620px,96vw);transform:translateX(-50%);bottom:calc(12px + var(--safe-bot));border-radius:18px;padding-bottom:10px}
 }
+
+/* ===== Monat im Supershift-Stil ===== */
+:root{--wkbg:rgba(120,120,128,.07);--selbg:#e3ebff;--todaybg:#2563eb;--todayfg:#fff}
+@media (prefers-color-scheme:dark){:root{--wkbg:rgba(255,255,255,.04);--selbg:#1f2b57;--todaybg:#eceef2;--todayfg:#111}}
+.mgrid{gap:0;padding:0 6px}
+.day{aspect-ratio:auto;height:auto;min-height:74px;border:0;border-radius:0;border-top:1px solid var(--line);
+  padding:3px 1px 4px;align-items:center;justify-content:flex-start;gap:2px;overflow:hidden}
+.day.we{background:var(--wkbg)}
+.day.sel{background:var(--selbg)}
+.day.today{background:var(--todaybg);color:var(--todayfg);border-radius:10px}
+.day.today .n{background:none;color:var(--todayfg)}
+.day .top{flex-direction:row;justify-content:center;position:relative;width:100%;padding:0}
+.day .n{width:auto;height:22px;font-size:16px;font-weight:500;border-radius:0;background:none}
+.day.we .n{color:inherit}
+.kw{position:absolute;left:3px;top:1px;font-size:9px;color:var(--muted);font-weight:500}
+.day.today .kw{color:inherit;opacity:.6}
+.bubs{display:flex;align-items:center;justify-content:center;width:100%;min-height:32px;flex:none}
+.bub{display:grid;place-items:center;border-radius:50%;color:#fff;font-weight:800;line-height:1;flex:none;
+  box-shadow:0 0 0 1.5px var(--card)}
+.bub.big{width:34px;height:34px;font-size:17px}
+.bub.t{font-size:12px;letter-spacing:.3px}
+.cluster{display:grid;grid-template-columns:repeat(2,17px);grid-auto-rows:17px}
+.cluster .bub{width:19px;height:19px;font-size:10px}
+.cluster .bub.t{font-size:7.5px}
+.cluster.n2 .bub:nth-child(2){grid-column:2;grid-row:2}
+.tl{font-size:10px;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px;text-align:left;line-height:1.25}
+.tl:before{content:"● ";font-size:7px;color:var(--muted);vertical-align:1px}
+.day.today .tl:before{color:inherit}
+.sh .si{margin-right:3px}
+@media (min-width:560px){
+  .mgrid{padding:0 12px;gap:0}
+  .day{height:auto;min-height:clamp(92px,11.5vh,140px);border:0;border-top:1px solid var(--line);border-radius:0;align-items:center;padding:4px 2px 5px}
+  .day.today{border-radius:12px}
+  .day .top{flex-direction:row;justify-content:center}
+  .day .n{width:auto;height:26px;font-size:19px}
+  .kw{font-size:11px;left:4px;top:3px}
+  .bubs{min-height:46px}
+  .bub.big{width:46px;height:46px;font-size:23px}
+  .bub.big.t{font-size:15px}
+  .cluster{grid-template-columns:repeat(2,24px);grid-auto-rows:24px}
+  .cluster .bub{width:27px;height:27px;font-size:14px}
+  .cluster .bub.t{font-size:10px}
+  .tl{font-size:12.5px;padding:0 4px}
+}
+@media (min-width:760px) and (min-aspect-ratio:5/4){ .day{min-height:0} .bubs{min-height:0;flex:1} .bub.big{width:40px;height:40px;font-size:20px} .cluster{grid-template-columns:repeat(2,19px);grid-auto-rows:19px} .cluster .bub{width:22px;height:22px;font-size:11px} }
+@media (min-width:560px) and (max-height:520px){
+  .day{min-height:0;padding:1px}
+  .day .n{height:18px;font-size:14px}
+  .bubs{min-height:22px}
+  .bub.big{width:22px;height:22px;font-size:12px}
+  .cluster{grid-template-columns:repeat(2,12px);grid-auto-rows:12px}
+  .cluster .bub{width:13px;height:13px;font-size:7px}
+  .tl{display:none}
+}
 </style>
 </head>
 <body class="v-month">
@@ -340,7 +394,8 @@ body.v-week #cal{flex:none}
   <div class="sheet-head"><button id="catCancel">Zurück</button><h3 id="catHeading">Kategorie</h3><button class="save" id="catSave">Sichern</button></div>
   <div class="field">
     <div class="row"><label>Name</label><input type="text" id="cName" maxlength="24" placeholder="z. B. Familie"></div>
-    <div class="row"><label>Symbol</label><input type="text" id="cIcon" maxlength="4" placeholder="🙂"></div>
+    <div class="row"><label>Symbol</label><input type="text" id="cIcon" maxlength="4" placeholder="🙂 oder GS"></div>
+    <div class="row"><label>Als Symbol im Monat</label><label class="switch"><input type="checkbox" id="cBubble"><span></span></label></div>
   </div>
   <div class="field"><div class="colors" id="cColors"></div></div>
   <button class="danger" id="catDelete">Kategorie löschen</button>
@@ -353,6 +408,7 @@ body.v-week #cal{flex:none}
   <div class="field">
     <div class="row"><label>Name</label><input type="text" id="tName" maxlength="24" placeholder="z. B. Büro"></div>
     <div class="row"><label>Kürzel</label><input type="text" id="tShort" maxlength="3" placeholder="B"></div>
+    <div class="row"><label>Symbol</label><input type="text" id="tIcon" maxlength="4" placeholder="☕"></div>
   </div>
   <div class="field">
     <div class="row"><label>Ganztägig</label><label class="switch"><input type="checkbox" id="tAllDay"><span></span></label></div>
@@ -395,16 +451,16 @@ const DEF_CATS = [
   {id:"arbeit", name:"Arbeit", icon:"💼", color:"#0ea5e9"},
   {id:"engie", name:"ENGIE", icon:"⚡", color:"#00aaff"},
   {id:"familie", name:"Familie", icon:"👨‍👩‍👧‍👦", color:"#16a34a"},
-  {id:"gala", name:"Galatasaray", icon:"⚽", color:"#e4a11b"},
-  {id:"f1", name:"Formel 1", icon:"🏎️", color:"#e10600"}
+  {id:"gala", name:"Galatasaray", icon:"GS", color:"#b8361e", bubble:true},
+  {id:"f1", name:"Formel 1", icon:"🏎️", color:"#5b9be0", bubble:true}
 ];
 const DEF_TPLS = [
-  {id:"b", short:"B", name:"Büro", allDay:false, start:"07:30", end:"16:00", color:"#2563eb"},
-  {id:"ho", short:"HO", name:"Homeoffice", allDay:false, start:"08:00", end:"16:30", color:"#a855f7"},
-  {id:"dr", short:"DR", name:"Dienstreise", allDay:true, start:"", end:"", color:"#0ea5e9"},
-  {id:"bs", short:"BS", name:"Bereitschaft", allDay:true, start:"", end:"", color:"#f97316"},
-  {id:"u", short:"U", name:"Urlaub", allDay:true, start:"", end:"", color:"#16a34a"},
-  {id:"f", short:"F", name:"Frei", allDay:true, start:"", end:"", color:"#6b7280"}
+  {id:"b", short:"B", name:"Büro", icon:"☕", allDay:false, start:"07:00", end:"15:30", color:"#8b6cf0"},
+  {id:"ho", short:"HO", name:"Homeoffice", icon:"💻", allDay:false, start:"07:00", end:"15:30", color:"#0ea5e9"},
+  {id:"dr", short:"DR", name:"Dienstreise", icon:"🚗", allDay:true, start:"", end:"", color:"#14b8a6"},
+  {id:"bs", short:"BS", name:"Bereitschaft", icon:"📞", allDay:true, start:"", end:"", color:"#f97316"},
+  {id:"u", short:"U", name:"Urlaub", icon:"🌴", allDay:true, start:"", end:"", color:"#22c55e"},
+  {id:"f", short:"F", name:"Frei", icon:"🏠", allDay:true, start:"", end:"", color:"#f0b429"}
 ];
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -421,6 +477,14 @@ let shifts = load(K.sh, {});
 let health = load(K.hl, {});
 let sync = load(K.sync, {url:"", key:"", secret:"", last:null});
 if (!cats.some(c => c.id === "engie")) cats.splice(Math.min(2,cats.length), 0, {id:"engie", name:"ENGIE", icon:"⚡", color:"#00aaff"});
+// Migration: Symbole/Blasen ergänzen
+const TPL_ICON = {b:"☕", ho:"💻", dr:"🚗", bs:"📞", u:"🌴", f:"🏠"};
+tpls.forEach(t => { if (!t.icon) t.icon = TPL_ICON[t.id] || t.short; });
+cats.forEach(c => {
+  if (c.bubble === undefined) c.bubble = (c.id === "gala" || c.id === "f1");
+  if (c.id === "gala" && c.icon === "⚽" && c.color === "#e4a11b"){ c.icon = "GS"; c.color = "#b8361e"; }
+  if (c.id === "f1" && c.color === "#e10600") c.color = "#5b9be0";
+});
 // Alte Termine (v1) bekommen eine Kategorie
 events.forEach(e => { if (!e.cat) e.cat = "privat"; });
 const saveAll = () => { save(K.ev, events); save(K.opt, opts); save(K.cat, cats); save(K.tpl, tpls); save(K.sh, shifts); save(K.hl, health); };
@@ -483,7 +547,15 @@ function eventsOn(d){
     .sort((a,b) => (a.allDay?"":a.start||"").localeCompare(b.allDay?"":b.start||"") || a.title.localeCompare(b.title));
 }
 const shiftOn = d => tplOf(shifts[ymd(d)]);
-const shBadge = t => t ? `<span class="sh" style="background:${t.color}">${esc(t.short)}</span>` : "";
+const shBadge = t => t ? `<span class="sh" style="background:${t.color}"><span class="si">${esc(t.icon||"")}</span>${esc(t.short)}</span>` : "";
+const isTxt = i => /^[A-Za-z0-9]{1,3}$/.test(i||"");
+const bub = (b, big) => `<i class="bub ${big?"big":""} ${isTxt(b.i)?"t":""}" style="background:${b.c}">${esc(b.i)}</i>`;
+function dayBubbles(d, evs){
+  const out = [], t = shiftOn(d), seen = new Set();
+  if (t) out.push({c:t.color, i:t.icon||t.short});
+  evs.forEach(e => { const c = catOf(e.cat); if (c.bubble && !seen.has(c.id)){ seen.add(c.id); out.push({c:c.color, i:c.icon}); } });
+  return out;
+}
 const fmtK = n => n >= 10000 ? (n/1000).toFixed(0)+"k" : n >= 1000 ? (n/1000).toFixed(1).replace(".",",")+"k" : String(n);
 const fmtH = h => String(Math.round(h*10)/10).replace(".",",");
 function hMini(d, full){ const h = opts.health && health[ymd(d)]; if (!h) return "";
@@ -521,7 +593,7 @@ function onDayTap(d){
 function renderMonth(){
   const first = new Date(anchor), offset = (first.getDay()+6)%7, start = addDays(first, -offset);
   const weeks = Math.ceil((offset + new Date(anchor.getFullYear(), anchor.getMonth()+1, 0).getDate())/7);
-  let html = `<div class="weekdays"><div>Mo</div><div>Di</div><div>Mi</div><div>Do</div><div>Fr</div><div>Sa</div><div>So</div></div><div class="mgrid" id="swipe">`;
+  let html = `<div class="weekdays"><div>M</div><div>D</div><div>M</div><div>D</div><div>F</div><div>S</div><div>S</div></div><div class="mgrid" id="swipe">`;
   for (let i = 0; i < weeks*7; i++){
     const d = addDays(start, i), evs = eventsOn(d), cls = ["day"];
     if (d.getMonth() !== anchor.getMonth()) cls.push("other");
@@ -529,9 +601,10 @@ function renderMonth(){
     if (holidayOf(d)) cls.push("hol");
     if (sameDay(d,today)) cls.push("today");
     if (sameDay(d,selected) && !painting) cls.push("sel");
-    html += `<button class="${cls.join(" ")}" data-d="${ymd(d)}"><div class="top"><div class="n">${d.getDate()}</div>${shBadge(shiftOn(d))}</div>
-      <div class="dots">${evs.slice(0,3).map(e=>`<i style="background:${colorOf(e)}"></i>`).join("")}</div>
-      <div class="chips">${evs.slice(0,3).map(e=>`<b style="background:${colorOf(e)}">${esc(e.title)}</b>`).join("")}${evs.length>3?`<em>+${evs.length-3} weitere</em>`:""}</div>${hMini(d)}</button>`;
+    const bs = dayBubbles(d, evs), texts = evs.filter(e => !catOf(e.cat).bubble);
+    const bhtml = bs.length === 0 ? "" : bs.length === 1 ? bub(bs[0], true) : `<div class="cluster n${Math.min(bs.length,4)}">${bs.slice(0,4).map(b => bub(b,false)).join("")}</div>`;
+    html += `<button class="${cls.join(" ")}" data-d="${ymd(d)}"><div class="top">${i%7===0?`<span class="kw">${isoWeek(d)}</span>`:""}<div class="n">${d.getDate()}</div></div>
+      <div class="bubs">${bhtml}</div>${texts.slice(0,2).map(e => `<div class="tl">${esc(e.title)}</div>`).join("")}${texts.length>2?`<div class="tl">+${texts.length-2}</div>`:""}${hMini(d)}</button>`;
   }
   $("main").innerHTML = html + "</div>";
   $("main").querySelectorAll(".day").forEach(b => b.onclick = () => onDayTap(parse(b.dataset.d)));
@@ -744,7 +817,7 @@ const backToMenu = () => { renderMenu(); show($("menuSheet")); };
 let editCat = null, catColor = COLORS[0];
 function openCat(c){
   editCat = c; $("catHeading").textContent = c ? "Kategorie bearbeiten" : "Neue Kategorie";
-  $("cName").value = c ? c.name : ""; $("cIcon").value = c ? c.icon : "";
+  $("cName").value = c ? c.name : ""; $("cIcon").value = c ? c.icon : ""; $("cBubble").checked = c ? !!c.bubble : false;
   catColor = c ? c.color : COLORS[(cats.length) % COLORS.length];
   paintColors($("cColors"), catColor, v => catColor = v);
   $("catDelete").style.display = c && cats.length > 1 ? "" : "none";
@@ -753,7 +826,7 @@ function openCat(c){
 $("catCancel").onclick = backToMenu;
 $("catSave").onclick = () => {
   const name = $("cName").value.trim(); if (!name){ toast("Bitte einen Namen eingeben"); return; }
-  const data = {name, icon: $("cIcon").value.trim() || "•", color: catColor};
+  const data = {name, icon: $("cIcon").value.trim() || "•", color: catColor, bubble: $("cBubble").checked};
   if (editCat) Object.assign(editCat, data); else cats.push(Object.assign({id:uid()}, data));
   save(K.cat, cats); render(); backToMenu();
 };
@@ -769,7 +842,7 @@ const toggleTTime = () => document.querySelectorAll(".tTime").forEach(r => r.sty
 $("tAllDay").onchange = toggleTTime;
 function openTpl(t){
   editTpl = t; $("tplHeading").textContent = t ? "Dienst bearbeiten" : "Neuer Dienst";
-  $("tName").value = t ? t.name : ""; $("tShort").value = t ? t.short : "";
+  $("tName").value = t ? t.name : ""; $("tShort").value = t ? t.short : ""; $("tIcon").value = t ? (t.icon||"") : "";
   $("tAllDay").checked = t ? t.allDay : false; $("tStart").value = t ? t.start : "08:00"; $("tEnd").value = t ? t.end : "16:30";
   tplColor = t ? t.color : COLORS[tpls.length % COLORS.length];
   paintColors($("tColors"), tplColor, v => tplColor = v);
@@ -780,7 +853,7 @@ $("tplSave").onclick = () => {
   const name = $("tName").value.trim(), short = $("tShort").value.trim().toUpperCase();
   if (!name || !short){ toast("Name und Kürzel ausfüllen"); return; }
   const allDay = $("tAllDay").checked;
-  const data = {name, short, allDay, start: allDay?"":$("tStart").value, end: allDay?"":$("tEnd").value, color: tplColor};
+  const data = {name, short, icon: $("tIcon").value.trim() || short, allDay, start: allDay?"":$("tStart").value, end: allDay?"":$("tEnd").value, color: tplColor};
   if (editTpl) Object.assign(editTpl, data); else tpls.push(Object.assign({id:uid()}, data));
   save(K.tpl, tpls); render(); backToMenu();
 };
@@ -883,14 +956,14 @@ $("importFile").onchange = async e => {
     if (!valid.length && !nShift && !data.health) throw 0;
     if (!confirm(`${valid.length} Termine${nShift?` und ${nShift} Dienste`:""} gefunden. Importieren? Vorhandene gleiche Termine werden aktualisiert.`)) return;
     (data.categories||[]).forEach(c => { if (c && c.id && !cats.some(x => x.id === c.id)) cats.push(c); });
-    (data.templates||[]).forEach(t => { if (t && t.id && !tpls.some(x => x.id === t.id)) tpls.push(t); });
+    (data.templates||[]).forEach(t => { if (!t || !t.id) return; const i = tpls.findIndex(x => x.id === t.id); if (i >= 0) tpls[i] = Object.assign({}, tpls[i], t); else tpls.push(t); });
     if (data.shifts) Object.assign(shifts, data.shifts);
     if (data.health) Object.assign(health, data.health);
     let neu = 0, upd = 0;
     valid.forEach(x => { if (!x.cat || !cats.some(c => c.id === x.cat)) x.cat = "privat";
       const i = events.findIndex(y => y.id === x.id); if (i >= 0){ events[i] = x; upd++; } else { events.push(x); neu++; } });
     if (!cats.some(c => c.id === "privat")) cats.unshift(DEF_CATS[0]);
-    saveAll(); render(); hide(); toast(`${neu} neu, ${upd} aktualisiert`);
+    saveAll(); render(); hide(); toast(`${neu} neu, ${upd} aktualisiert${nShift?` · ${nShift} Dienste`:""}`);
   }catch(err){ toast("Datei konnte nicht gelesen werden"); }
   e.target.value = "";
 };
