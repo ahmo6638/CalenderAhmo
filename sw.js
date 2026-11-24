@@ -1,5 +1,5 @@
 // Offline-Cache: App funktioniert auch ohne Internet
-const CACHE = "kalender-v6";
+const CACHE = "kalender-v7";
 const FILES = ["./", "index.html", "manifest.json", "icon-180.png", "icon-512.png"];
 
 self.addEventListener("install", e => {

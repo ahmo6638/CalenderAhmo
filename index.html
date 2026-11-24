@@ -791,14 +791,20 @@ function paintColors(el, cur, set){
 let editing = null, evCat = "privat";
 function paintCats(){
   $("fCats").innerHTML = cats.map(c => `<button data-c="${c.id}" class="${c.id===evCat?"on":""}" style="--cc:${c.color};${c.id===evCat?`background:${c.color};color:#fff`:""}">${c.icon} ${esc(c.name)}</button>`).join("");
-  $("fCats").querySelectorAll("button").forEach(b => b.onclick = () => { evCat = b.dataset.c; paintCats(); });
+  $("fCats").querySelectorAll("button").forEach(b => b.onclick = () => { evCat = b.dataset.c; paintCats(); catChosen(); });
+  $("fTitle").placeholder = `Titel (leer = „${catOf(evCat).name}“)`;
+}
+let allDayTouched = false;
+function catChosen(){
+  const c = catOf(evCat);
+  if (!editing && !allDayTouched && c.bubble){ $("fAllDay").checked = true; toggleTime(); }
 }
 const toggleTime = () => document.querySelectorAll(".timeRow").forEach(r => r.style.display = $("fAllDay").checked ? "none" : "");
-$("fAllDay").onchange = toggleTime;
+$("fAllDay").onchange = () => { allDayTouched = true; toggleTime(); };
 $("fStart").onchange = () => { const s = $("fStart").value; if (!s) return; const [h,m] = s.split(":").map(Number), e = $("fEnd").value;
   if (!e || e <= s) $("fEnd").value = `${pad(Math.min(h+1,23))}:${pad(m)}`; };
 function openEditor(ev){
-  editing = ev || null;
+  editing = ev || null; allDayTouched = false;
   $("evHeading").textContent = ev ? "Termin bearbeiten" : "Neuer Termin";
   $("evDelete").style.display = ev ? "" : "none";
   const nh = Math.min(new Date().getHours()+1, 23);
@@ -812,13 +818,11 @@ function openEditor(ev){
   $("fNote").value = ev ? (ev.note||"") : "";
   evCat = ev ? ev.cat : (cats.find(c => !opts.hidden.includes(c.id)) || cats[0]).id;
   paintCats(); toggleTime(); show($("evSheet"));
-  if (!ev) setTimeout(() => $("fTitle").focus(), 300);
 }
 $("fab").onclick = () => openEditor(null);
 $("evCancel").onclick = hide;
 $("evSave").onclick = () => {
-  const title = $("fTitle").value.trim();
-  if (!title){ toast("Bitte einen Titel eingeben"); $("fTitle").focus(); return; }
+  const title = $("fTitle").value.trim() || catOf(evCat).name;
   if (!$("fDate").value){ toast("Bitte ein Datum wählen"); return; }
   const allDay = $("fAllDay").checked;
   if (!allDay && $("fEnd").value && $("fStart").value && $("fEnd").value < $("fStart").value){ toast("Ende liegt vor dem Beginn"); return; }
